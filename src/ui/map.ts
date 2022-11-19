@@ -1,4 +1,5 @@
 import {extend, bindAll, warnOnce, uniqueId, isImageBitmap} from '../util/util';
+import config from '../util/config';
 import browser from '../util/browser';
 import DOM from '../util/dom';
 import packageJSON from '../../package.json' assert {type: 'json'};
@@ -328,6 +329,13 @@ class Map extends Camera {
     _removed: boolean;
     _clickTolerance: number;
     _pixelRatio: number;
+    /**
+     * 路况显示的相关方法变量
+     */
+    _trafficLayerId: any;
+    _intervalFunc: any;
+    _intervalFuncTraffic: any;
+
     _terrainDataCallback: (e: MapStyleDataEvent | MapSourceDataEvent) => void;
 
     /**
@@ -2091,6 +2099,205 @@ class Map extends Camera {
         this.style.addLayer(layer, beforeId);
         return this._update(true);
     }
+
+    /**
+     * 路况显示方法.
+     * @param show
+     * @param optionsObj
+     * @returns {Map}
+     * @example
+     */
+    trafficLayer(show: boolean, optionsObj: Object) {
+        const _this = this;
+        //生成默认配置
+        const options = extend({
+            minzoom: 1, //最小级别
+            maxzoom: 24,  //最大级别
+            type: 'vector',  //路况图层类型 默认矢量
+            refresh: 120 * 1000, // 刷新时间,默认2分钟
+            before: '',   //所在**图层之前
+            layerid: 'layer-traffic-amap',
+            animation: false
+        }, optionsObj);
+        //设置全局layerid
+        this._trafficLayerId = options.layerid;
+        if (!show) { //是否显示路况  隐藏
+            /*if (this.getLayer(options.sourceid)) {
+                this.removeLayer(options.sourceid);
+            }
+            if (this.getSource(options.sourceid)) {
+                this.removeSource(options.sourceid);
+            }*/
+            if (this._intervalFunc) { //清除路况刷新定时器
+                clearInterval(this._intervalFunc);
+            }
+            if (this._intervalFuncTraffic) {
+                clearInterval(this._intervalFuncTraffic);
+            }
+            //删除原有路况
+            this.removeLayerAndSource(this._trafficLayerId);
+        } else {
+            //this._trafficLayerId = options.layerid;
+            if (this.getSource(this._trafficLayerId) || this.getLayer(this._trafficLayerId)) {
+                //重复调用显示路况方法，清除原有叠加路况
+                if (this._intervalFunc) {
+                    clearInterval(this._intervalFunc);
+                }
+                if (this._intervalFuncTraffic) {
+                    clearInterval(this._intervalFuncTraffic);
+                }
+                this.removeLayerAndSource(this._trafficLayerId);
+            }
+            if (!this.getSource(this._trafficLayerId) && !this.getLayer(this._trafficLayerId)) {
+                if (options.type === 'vector') {
+                    //定义路况图层属性
+                    const trafficLayerStyle = {
+                        "id": this._trafficLayerId,
+                        "type": "line",
+                        "metadata": {},
+                        "source": typeof options.source !== 'undefined' ? options.source : config.TRAFFIC_SOURCE.vector,
+                        "source-layer": "vectortraffic",
+                        "minzoom": options.minzoom,
+                        "maxzoom": options.maxzoom,
+                        "layout": {
+                            "line-cap": "round",
+                            "line-join": "round",
+                            "visibility": "visible"
+                        },
+                        "paint": {
+                            "line-color": {
+                                "property": "traffic_status",
+                                "type": "categorical",
+                                "stops": [
+                                    [
+                                        {
+                                            "zoom": 10,
+                                            "value": 1
+                                        },
+                                        "rgba(19, 134, 22, 1)"
+                                    ],
+                                    [
+                                        {
+                                            "zoom": 10,
+                                            "value": 2
+                                        },
+                                        "rgba(222, 161, 29, 1)"
+                                    ],
+                                    [
+                                        {
+                                            "zoom": 10,
+                                            "value": 3
+                                        },
+                                        "rgba(222, 29, 29, 1)"
+                                    ],
+                                    [
+                                        {
+                                            "zoom": 10,
+                                            "value": 4
+                                        },
+                                        "rgba(98, 3, 3, 1)"
+                                    ],
+                                    [
+                                        {
+                                            "zoom": 10,
+                                            "value": 5
+                                        },
+                                        "rgba(124, 124, 122, 1)"
+                                    ]
+                                ],
+                                "default": "rgba(19, 134, 22, 1)"
+                            },
+                            "line-width": {
+                                "stops": [
+                                    [
+                                        8,
+                                        2
+                                    ],
+                                    [
+                                        10,
+                                        2.2
+                                    ],
+                                    [
+                                        15,
+                                        3
+                                    ]
+                                ]
+                            },
+                        }
+                    };
+                    //添加路况图层
+                    this.addLayer(extend({}, trafficLayerStyle), options.before);
+                    this._intervalFunc = setInterval(() => {
+                        _this.removeLayerAndSource(_this._trafficLayerId);
+                        _this.addLayer(extend({}, trafficLayerStyle), options.before);
+                    }, options.refresh);
+
+                    //矢量路况设置流动效果
+                    if (options.animation) {
+                        const dashLength = 0.01;
+                        const gapLength = 4;
+                        let valueOne, valueTwo, valueThree, valueFour, ValueFive;
+                        const totalNumberOfSteps = 20;
+                        const dashSteps = totalNumberOfSteps * dashLength / (gapLength + dashLength); //4
+                        const gapSteps = totalNumberOfSteps - dashSteps; //16
+                        let currentStep = 20;
+                        this._intervalFuncTraffic = setInterval(() => {
+                            currentStep = currentStep - 1;
+                            if (currentStep <= 0) {
+                                currentStep = 20;
+                            }
+                            if (currentStep < dashSteps) {
+                                valueOne = currentStep / dashSteps;
+                                valueTwo = (1 - valueOne) * dashLength; //3 2 1
+                                valueThree = gapLength;//16 16 16
+                                valueFour = valueOne * dashLength; //1 2 3
+                                ValueFive = 0;
+                            } else {
+                                valueOne = (currentStep - dashSteps) / (gapSteps);//0
+                                valueTwo = 0; ///0
+                                valueThree = (1 - valueOne) * gapLength;
+                                valueFour = dashLength;
+                                ValueFive = valueOne * gapLength;
+                            }
+                            const arr = [];
+                            arr.push(valueTwo, valueThree, valueFour, ValueFive);
+                            _this.setPaintProperty("layer-traffic-amap", "line-dasharray", arr);
+                        }, 60);
+                    }
+                }
+
+                if (options.type === 'raster') {
+                    const trafficLayerStyle = {
+                        "id": this._trafficLayerId,
+                        "type": "raster",
+                        "source": typeof options.source !== 'undefined' ? options.source : config.TRAFFIC_SOURCE.raster
+                    };
+                    trafficLayerStyle.source.tileSize = Number(trafficLayerStyle.source.tileSize);
+                    this.addLayer(extend({}, trafficLayerStyle), options.before);
+                    this._intervalFunc = setInterval(() => {
+                        _this.removeLayerAndSource(_this._trafficLayerId);
+                        _this.addLayer(extend({}, trafficLayerStyle), options.before);
+                    }, options.refresh);
+                }
+            }
+        }
+        return this._update(true);
+    }
+
+    /**
+     * @param layerid
+     * @example
+     * Removes the layer and the layer's source with the given ID from the map's style.
+     */
+    removeLayerAndSource(layerid: string) {
+        if (this.getLayer(layerid)) {
+            this.removeLayer(layerid);
+        }
+        if (this.getSource(layerid)) {
+            this.removeSource(layerid);
+        }
+    }
+
 
     /**
      * Moves a layer to a different z-position.
