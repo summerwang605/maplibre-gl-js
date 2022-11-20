@@ -111,6 +111,7 @@ export type MapOptions = {
     style: StyleSpecification | string;
     pitchWithRotate?: boolean;
     pixelRatio?: number;
+    accessToken?: string;
 };
 
 export type GestureOptions = {
