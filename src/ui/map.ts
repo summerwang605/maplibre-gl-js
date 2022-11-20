@@ -2820,6 +2820,7 @@ class Map extends Camera {
                 if (callback) {
                     callback(features);
                 }
+                e.preventDefault();
             })
         }
     }
