@@ -177,7 +177,9 @@ const defaultOptions = {
     localIdeographFontFamily: 'sans-serif',
     transformRequest: null,
     fadeDuration: 300,
-    crossSourceCollisions: true
+    crossSourceCollisions: true,
+
+    accessToken: ''
 } as CompleteMapOptions;
 
 /**
@@ -336,6 +338,8 @@ class Map extends Camera {
     _intervalFunc: any;
     _intervalFuncTraffic: any;
 
+    accessToken: string;
+
     _terrainDataCallback: (e: MapStyleDataEvent | MapSourceDataEvent) => void;
 
     /**
@@ -431,7 +435,7 @@ class Map extends Camera {
         this._clickTolerance = options.clickTolerance;
         this._pixelRatio = options.pixelRatio ?? devicePixelRatio;
 
-        this._requestManager = new RequestManager(options.transformRequest);
+        this._requestManager = new RequestManager(options.transformRequest, options.accessToken);
 
         if (typeof options.container === 'string') {
             this._container = document.getElementById(options.container);

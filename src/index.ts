@@ -143,6 +143,23 @@ const exported = {
         config.MAX_PARALLEL_IMAGE_REQUESTS = numRequests;
     },
 
+    get accessToken(): string {
+        return config.ACCESS_TOKEN;
+    },
+
+    set accessToken(token: string) {
+        config.ACCESS_TOKEN = token;
+    },
+
+    get baseApiUrl(): string {
+        return config.API_URL;
+    },
+
+    set baseApiUrl(url: string) {
+        config.API_URL = url;
+    },
+
+
     /**
      * Clears browser storage used by this library. Using this method flushes the MapLibre tile
      * cache that is managed by this library. Tiles may still be cached by the browser
