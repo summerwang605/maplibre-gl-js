@@ -157,10 +157,13 @@ const maxPitchThreshold = 85;
  * }
  */
 const defTransformRequestFunc = (url: string, resourceType?: ResourceTypeEnum) => {
-    console.log('defTransformRequestFunc....' ,url, resourceType)
+   //console.log('private protocol url =>' ,url, resourceType)
     let resultRequest = {
         url: url
     };
+    /**
+     * 地图样式资源url
+     */
     if(resourceType === 'Style'){
         if (!isMapboxURL(url)) {
             if (isHttpURL(url)) {
@@ -179,6 +182,58 @@ const defTransformRequestFunc = (url: string, resourceType?: ResourceTypeEnum) =
         urlObject.path = '/webglapi/styles';
         resultRequest.url = makeAPIURL(urlObject);//`${config.API_URL}/webglapi/styles?n=${url}&addSource=true&sourceType=http&ak=${config.ACCESS_TOKEN}`;
     }
+    /**
+     * 图标集合json文件
+     */
+    if(resourceType === 'SpriteJSON' || resourceType === 'SpriteImage' ){
+        let spriteFileType = resourceType === 'SpriteJSON'?'json':'png';
+        if (!isMapboxURL(url)) {
+            if (isHttpURL(url)) {
+                resultRequest.url = url;
+            } else {
+                url = `mapabc://sprites/${url}.${spriteFileType}`;
+            }
+        }
+        const urlObject = parseUrl(url);
+        //urlObject.path = `/styles/v1${urlObject.path}`;
+        let spriteName = urlObject.path.replace('/','').replace('.json','').replace('.png','');
+        urlObject.params.push(`n=${spriteName}`);
+        urlObject.params.push(`e=${spriteFileType}`);
+        urlObject.authority = config.API_URL;
+        urlObject.path = '/webglapi/sprite';
+        resultRequest.url = makeAPIURL(urlObject);//http://121.36.99.212:35001/webglapi/sprite?n=mapabcjt@2x&e=json&ak=ec85d3648154874552835438ac6a02b2
+    }
+
+    if(resourceType === 'Glyphs') {
+        if (!isMapboxURL(url)) {
+            if (isHttpURL(url)) {
+                resultRequest.url = url;
+            } else {
+                url = `mapabc://glyphs/${url}/{range}.pbf`;
+            }
+        }
+        const urlObject = parseUrl(url);
+        //path: "/sourcehansanscn-normal/8192-8447.pbf"
+        let fontInfoArr = urlObject.path.split('/');
+        let fontstack = fontInfoArr[1];
+        let range = fontInfoArr[2].split('.')[0];
+        urlObject.params.push(`n=${fontstack}`);
+        urlObject.params.push(`r=${range}`);
+        urlObject.authority = config.API_URL;
+        urlObject.path = '/webglapi/fonts';
+        resultRequest.url = makeAPIURL(urlObject); // Request URL: http://121.36.99.212:35001/webglapi/fonts?n=sourcehansanscn-normal&r=0-255&ak=ec85d3648154874552835438ac6a02b2
+    }
+
+    if (resourceType === 'Image') {
+
+    }
+    if (resourceType === 'Tile') {
+
+    }
+    if (resourceType === 'Unknown') {
+
+    }
+
     if (resourceType === 'Source' && url.indexOf('http://myHost') > -1) {
         return {
             url: url.replace('http', 'https'),
@@ -186,6 +241,7 @@ const defTransformRequestFunc = (url: string, resourceType?: ResourceTypeEnum) =
             credentials: 'include'  // Include cookies for cross-origin requests
         }
     }
+    //console.log('target resource url =>' ,resultRequest.url, resourceType)
     return resultRequest
 };
 
@@ -2741,6 +2797,268 @@ class Map extends Camera {
      */
     getCanvas() {
         return this._canvas;
+    }
+
+    /**
+     * 地图poi点击
+     * @param show
+     * @param callback
+     */
+    poiClick(show: boolean,callback: (features: object) => void){
+        const _this = this;
+        if (show) {
+            _this.on('mousemove', function(e) {
+                const features = _this.queryRenderedFeatures(e.point,{filter: ["==", "$type", "Point"]});
+                if (features.length>0) {
+                    _this.getCanvas().style.cursor = 'pointer';
+                }else{
+                    _this.getCanvas().style.cursor = '';
+                }
+            });
+            _this.on('click',function(e){
+                const features = _this.queryRenderedFeatures(e.point,{filter: ["==", "$type", "Point"]});
+                if (callback) {
+                    callback(features);
+                }
+            })
+        }
+    }
+
+    /**
+     * 地图矢量图层点击
+     * @param options
+     * @param callback
+     * @example
+     */
+    layerClick(options: { show: boolean, type:string }, callback: (features: object) => void) {
+        const _this = this;
+        options =  Object.assign({
+            show:false,
+            type:'Point'
+        }, options);
+        if (options.show) {
+            this.on('mousemove', function(e) {
+                const features = _this.queryRenderedFeatures(e.point, {filter: ["==", "$type", options.type]});
+                if (features.length > 0) {
+                    this.getCanvas().style.cursor = 'pointer';
+                } else {
+                    this.getCanvas().style.cursor = '';
+                }
+            });
+            this.on('click', (e) => {
+                const features = _this.queryRenderedFeatures(e.point, {filter: ["==", "$type", options.type]});
+                if (features && callback) {
+                    callback(features);
+                }
+            });
+        }
+    }
+
+    /**
+     * 自封装ajax
+     * @param type
+     * @param url
+     * @param data
+     * @param success
+     * @param failed
+     * @example
+     */
+    ajax(type, url, data, success, failed) {
+        // 创建ajax对象
+        let xhr = null;
+        if (window.XMLHttpRequest) {
+            xhr = new XMLHttpRequest();
+        } else {
+            xhr = new ActiveXObject('Microsoft.XMLHTTP');
+        }
+        type = type.toUpperCase();
+        // 用于清除缓存
+        const random = Math.random();
+        if (typeof data === 'object') {
+            let str = '';
+            for (const key in data) {
+                str += (`${key}=${data[key]}&`);
+            }
+            data = str.replace(/&$/, '');
+        }
+        if (type === 'GET') {
+            if (data) {
+                xhr.open('GET', `${url}?${data}`, true);
+            } else {
+                xhr.open('GET', `${url}?t=${random}`, true);
+            }
+            xhr.send();
+
+        } else if (type === 'POST') {
+            xhr.open('POST', url, true);
+            // 如果需要像 html 表单那样 POST 数据，请使用 setRequestHeader() 来添加 http 头。
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhr.send(data);
+        }
+        // 处理返回数据
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    success(xhr.responseText);
+                } else {
+                    if (failed) {
+                        failed(xhr.status);
+                    }
+                }
+            }
+        };
+    }
+
+    /**
+     * 地理编码与逆地理编码
+     * @param options
+     * @param callback
+     * @example
+     */
+    Geocoder(options: Object, callback: Function) {
+        options =  Object.assign({
+            address:'',
+            city:'',
+            location:'',
+            ak: config.ACCESS_TOKEN
+        }, options);
+        for (const key in options) {
+            if (options[key] === '') {
+                delete options[key];
+            }
+        }
+        this.ajax('get', `${config.API_URL}/gss/geocode/v2`, options, (data) => {
+            if (callback) {
+                callback(JSON.parse(data));
+            }
+        }, (error) => {
+            console.log(error);
+        });
+    }
+
+    /**
+     * 行政区划查询
+     * @param options
+     * @param callback
+     * @example
+     */
+    DistrictSearch(options: Object, callback: Function) {
+        options =  Object.assign({
+            query:'', //关键字，关键字的首字母、拼音格式如，公园/gy/gongyuan（必填）
+            city:'', //所在的城市名称
+            level:'', //只查询该级的行政区划，可选province(省)、cit有(城市)、district(区县)。说明：当参数city有效时，该参数无效
+            ak:config.ACCESS_TOKEN
+        }, options);
+        for (const key in options) {
+            if (options[key] === '') {
+                delete options[key];
+            }
+        }
+        this.ajax('get', `${config.API_URL}/gss/district/v2`, options, (data) => {
+            if (callback) {
+                callback(JSON.parse(data));
+            }
+
+        }, (error) => {
+            console.log(error);
+        });
+    }
+
+    /**
+     * 车行路径规划
+     * @param options
+     * @param callback
+     * @example
+     */
+    Driving(options: Object, callback: Function) {
+        options =  Object.assign({
+            origin:'', //起点经纬度，或起点名称+经纬度（必填）
+            destination:'', //终点经纬度，或终点名称+经纬度（必填）
+            waypoints:'', //最多支持设置16组途经点。经、纬度之间用“,”分隔，坐标点之间用"；"分隔
+            coord_type:'', //坐标类型 见文档
+            tactics:'', //路径规划策略 见文档
+            avoidpolygons:'', //区域避让，支持32个避让区域，每个区域最多可有16个顶点 例 x,y;x,y|x,y;x,y
+            ak:config.ACCESS_TOKEN
+        }, options);
+        for (const key in options) {
+            if (options[key] === '') {
+                delete options[key];
+            }
+        }
+        this.ajax('get', `${config.API_URL}/as/route/car`, options, (data) => {
+            if (callback) {
+                callback(JSON.parse(data));
+            }
+        }, (error) => {
+            console.log(error);
+        });
+    }
+
+    /**
+     * 步行路径规划
+     * @param options
+     * @param callback
+     * @example
+     */
+    Walking(options: Object, callback: Function) {
+        options =  Object.assign({
+            origin:'', //起点经纬度，或起点名称+经纬度（必填）
+            destination:'', //终点经纬度，或终点名称+经纬度（必填）
+            coord_type:'', //坐标类型 见文档
+            tactics:'', //路径规划策略 见文档
+            ak:config.ACCESS_TOKEN
+        }, options);
+        for (const key in options) {
+            if (options[key] === '') {
+                delete options[key];
+            }
+        }
+        this.ajax('get', `${config.API_URL}/as/route/walk`, options, (data) => {
+            if (callback) {
+                callback(JSON.parse(data));
+            }
+        }, (error) => {
+            console.log(error);
+        });
+    }
+
+    /**.
+     * Poi搜索（关键字、多边形、周边）.
+     * @param options
+     * @param callback
+     * @example
+     */
+    PoiSearch(options: Object, callback: Function) {
+        options =  Object.assign({
+            query:'', //关键字，关键字的首字母、拼音格式如，公园/gy/gongyuan（必填）
+            scope:1, //检索结果详细程度,1返回基本信息；2返回POI详细信息。（必填）
+            region:'', //检索区域名称,可输入城市名或省份名或全国（必填）
+            type:'', //关键字类型
+            page_size:20, //每页记录数,最大值为50，超过50则按照50处理。
+            page_num:1, //分页页码,
+            location:'', //中心点(周边搜索必填)
+            radius:'', //半径，取值范围0~50000，超过50000时，按默认值1000进行搜搜，单位米。(周边搜索必填)
+            regionType:'', //几何对象类型,可选rectangle（矩形）、polygon(多边形)、circle（圆）、ellipse(椭圆)
+            bounds:'', //地理坐标点集合,目前支持四种图形类型：
+            // 坐标点经、纬度间使用半角“,”隔开，坐标对间使用半角“;”分隔。 如： x1,y1;x2,y2; x3,y3;x4,y4;x5,y5;
+            // regionType=rectangle，矩形左下、右上（或左上、右下）两个顶点的坐标；
+            // regionType=polygon，多边形所有顶点的顺序坐标，且首尾坐标相同；
+            // regionType=circle，圆形外接矩形左下、右上（或左上、右下）两个顶点的坐标；
+            // regionType=ellipse，椭圆外接矩形左下、右上（或左上、右下）两个顶点的坐标。
+            ak:config.ACCESS_TOKEN
+        }, options);
+        for (const key in options) {
+            if (options[key] === '') {
+                delete options[key];
+            }
+        }
+        this.ajax('get', `${config.API_URL}/as/search/poi`, options, (data) => {
+            if (callback) {
+                callback(JSON.parse(data));
+            }
+        }, (error) => {
+            console.log(error);
+        });
     }
 
     _containerDimensions() {
