@@ -30,7 +30,8 @@
         container: 'map',
         center: [116.2569, 39.9232],
         zoom: 10,
-        style: 'mapabc79w.json',
+        //style: 'mapabc79w.json',
+        style: 'mapabc://styles/mapabc79w',
         hash: true,
         accessToken : 'ec85d3648154874552835438ac6a02b2' //map options
     });
@@ -41,6 +42,7 @@
 
     map.addControl(new mapabcgl.ScaleControl({unit: 'metric'}));
     map.addControl(new mapabcgl.NavigationControl());
+    map.addControl(new mapabcgl.NavControl());
 
 </script>
 </body>
