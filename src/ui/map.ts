@@ -3,7 +3,7 @@ import config from '../util/config';
 import browser from '../util/browser';
 import DOM from '../util/dom';
 import packageJSON from '../../package.json' assert {type: 'json'};
-import {getImage, GetImageCallback, getJSON, ResourceType} from '../util/ajax';
+import {getImage, GetImageCallback, getJSON, RequestParameters, ResourceType} from '../util/ajax';
 import {RequestManager} from '../util/request_manager';
 import Style, {StyleSwapOptions} from '../style/style';
 import EvaluationParameters from '../style/evaluation_parameters';
@@ -61,7 +61,10 @@ import type {ControlPosition, IControl} from './control/control';
 import type {MapGeoJSONFeature} from '../util/vectortile_to_geojson';
 import Terrain from '../render/terrain';
 import RenderToTexture from '../render/render_to_texture';
+import {IResourceType} from '../util/ajax';
+import {parseUrl, makeAPIURL} from "../util/request_manager";
 
+type ResourceTypeEnum = keyof IResourceType;
 const version = packageJSON.version;
 
 /* eslint-enable no-use-before-define */
@@ -138,6 +141,54 @@ const defaultMaxPitch = 60;
 // use this variable to check maxPitch for validity
 const maxPitchThreshold = 85;
 
+/**
+ * 处理和转换资源url
+ * @param url
+ * @param resourceType
+ * http://121.36.99.212:35001/webglapi/styles?n=mapabc80&addSource=true&sourceType=http&ak=ec85d3648154874552835438ac6a02b2
+ * return {
+ *     url: string;
+ *     headers?: any;
+ *     method?: 'GET' | 'POST' | 'PUT';
+ *     body?: string;
+ *     type?: 'string' | 'json' | 'arrayBuffer';
+ *     credentials?: 'same-origin' | 'include';
+ *     collectResourceTiming?: boolean;
+ * }
+ */
+const defTransformRequestFunc = (url: string, resourceType?: ResourceTypeEnum) => {
+    console.log('defTransformRequestFunc....' ,url, resourceType)
+    let resultRequest = {
+        url: url
+    };
+    if(resourceType === 'Style'){
+        if (!isMapboxURL(url)) {
+            if (isHttpURL(url)) {
+                resultRequest.url = url;
+            } else {
+                url = `mapabc://style/${url}`;
+            }
+        }
+        const urlObject = parseUrl(url);
+        //urlObject.path = `/styles/v1${urlObject.path}`;
+        let styleName = urlObject.path.replace('/','');
+        urlObject.params.push(`n=${styleName}`);
+        urlObject.params.push(`addSource=true`);
+        urlObject.params.push(`sourceType=http`);
+        urlObject.authority = config.API_URL;
+        urlObject.path = '/webglapi/styles';
+        resultRequest.url = makeAPIURL(urlObject);//`${config.API_URL}/webglapi/styles?n=${url}&addSource=true&sourceType=http&ak=${config.ACCESS_TOKEN}`;
+    }
+    if (resourceType === 'Source' && url.indexOf('http://myHost') > -1) {
+        return {
+            url: url.replace('http', 'https'),
+            headers: {'my-custom-header': true},
+            credentials: 'include'  // Include cookies for cross-origin requests
+        }
+    }
+    return resultRequest
+};
+
 const defaultOptions = {
     center: [0, 0],
     zoom: 0,
@@ -176,7 +227,7 @@ const defaultOptions = {
     refreshExpiredTiles: true,
     maxTileCacheSize: null,
     localIdeographFontFamily: 'sans-serif',
-    transformRequest: null,
+    transformRequest: defTransformRequestFunc,
     fadeDuration: 300,
     crossSourceCollisions: true,
 
@@ -292,7 +343,7 @@ class Map extends Camera {
     _container: HTMLElement;
     _canvasContainer: HTMLElement;
     _controlContainer: HTMLElement;
-    _controlPositions: {[_: string]: HTMLElement};
+    _controlPositions: { [_: string]: HTMLElement };
     _interactive: boolean;
     _cooperativeGestures: boolean | GestureOptions;
     _cooperativeGesturesScreen: HTMLElement;
@@ -772,7 +823,9 @@ class Map extends Camera {
      * @example
      * var minZoom = map.getMinZoom();
      */
-    getMinZoom() { return this.transform.minZoom; }
+    getMinZoom() {
+        return this.transform.minZoom;
+    }
 
     /**
      * Sets or clears the map's maximum zoom level.
@@ -807,7 +860,9 @@ class Map extends Camera {
      * @example
      * var maxZoom = map.getMaxZoom();
      */
-    getMaxZoom() { return this.transform.maxZoom; }
+    getMaxZoom() {
+        return this.transform.maxZoom;
+    }
 
     /**
      * Sets or clears the map's minimum pitch.
@@ -842,7 +897,9 @@ class Map extends Camera {
      *
      * @returns {number} minPitch
      */
-    getMinPitch() { return this.transform.minPitch; }
+    getMinPitch() {
+        return this.transform.minPitch;
+    }
 
     /**
      * Sets or clears the map's maximum pitch.
@@ -877,7 +934,9 @@ class Map extends Camera {
      *
      * @returns {number} maxPitch
      */
-    getMaxPitch() { return this.transform.maxPitch; }
+    getMaxPitch() {
+        return this.transform.maxPitch;
+    }
 
     /**
      * Returns the state of `renderWorldCopies`. If `true`, multiple copies of the world will be rendered side by side beyond -180 and 180 degrees longitude. If set to `false`:
@@ -890,7 +949,9 @@ class Map extends Camera {
      * var worldCopiesRendered = map.getRenderWorldCopies();
      * @see [Render world copies](https://maplibre.org/maplibre-gl-js-docs/example/render-world-copies/)
      */
-    getRenderWorldCopies() { return this.transform.renderWorldCopies; }
+    getRenderWorldCopies() {
+        return this.transform.renderWorldCopies;
+    }
 
     /**
      * Sets the state of `renderWorldCopies`.
@@ -975,7 +1036,7 @@ class Map extends Camera {
     _createDelegatedListener(type: MapEvent | string, layerId: string, listener: Listener): {
         layer: string;
         listener: Listener;
-        delegates: {[type in keyof MapEventType]?: (e: any) => void};
+        delegates: { [type in keyof MapEventType]?: (e: any) => void };
     } {
         if (type === 'mouseenter' || type === 'mouseover') {
             let mousein = false;
@@ -1818,24 +1879,32 @@ class Map extends Camera {
      * @see Use `ImageData`: [Add a generated icon to the map](https://maplibre.org/maplibre-gl-js-docs/example/add-image-generated/)
      */
     addImage(id: string,
-        image: HTMLImageElement | ImageBitmap | ImageData | {
-            width: number;
-            height: number;
-            data: Uint8Array | Uint8ClampedArray;
-        } | StyleImageInterface,
-        {
-            pixelRatio = 1,
-            sdf = false,
-            stretchX,
-            stretchY,
-            content
-        }: Partial<StyleImageMetadata> = {}) {
+             image: HTMLImageElement | ImageBitmap | ImageData | {
+                 width: number;
+                 height: number;
+                 data: Uint8Array | Uint8ClampedArray;
+             } | StyleImageInterface,
+             {
+                 pixelRatio = 1,
+                 sdf = false,
+                 stretchX,
+                 stretchY,
+                 content
+             }: Partial<StyleImageMetadata> = {}) {
         this._lazyInitEmptyStyle();
         const version = 0;
 
         if (image instanceof HTMLImageElement || isImageBitmap(image)) {
             const {width, height, data} = browser.getImageData(image);
-            this.style.addImage(id, {data: new RGBAImage({width, height}, data), pixelRatio, stretchX, stretchY, content, sdf, version});
+            this.style.addImage(id, {
+                data: new RGBAImage({width, height}, data),
+                pixelRatio,
+                stretchX,
+                stretchY,
+                content,
+                sdf,
+                version
+            });
         } else if (image.width === undefined || image.height === undefined) {
             return this.fire(new ErrorEvent(new Error(
                 'Invalid arguments to map.addImage(). The second argument must be an `HTMLImageElement`, `ImageData`, `ImageBitmap`, ' +
@@ -1880,11 +1949,11 @@ class Map extends Camera {
      * if (map.hasImage('cat')) map.updateImage('cat', './other-cat-icon.png');
      */
     updateImage(id: string,
-        image: HTMLImageElement | ImageBitmap | ImageData | {
-            width: number;
-            height: number;
-            data: Uint8Array | Uint8ClampedArray;
-        } | StyleImageInterface) {
+                image: HTMLImageElement | ImageBitmap | ImageData | {
+                    width: number;
+                    height: number;
+                    data: Uint8Array | Uint8ClampedArray;
+                } | StyleImageInterface) {
 
         const existingImage = this.style.getImage(id);
         if (!existingImage) {
@@ -2099,7 +2168,7 @@ class Map extends Camera {
      * @see [Add a vector tile source](https://maplibre.org/maplibre-gl-js-docs/example/vector-source/)
      * @see [Add a WMS source](https://maplibre.org/maplibre-gl-js-docs/example/wms/)
      */
-    addLayer(layer: (LayerSpecification & {source?: string | SourceSpecification}) | CustomLayerInterface, beforeId?: string) {
+    addLayer(layer: (LayerSpecification & { source?: string | SourceSpecification }) | CustomLayerInterface, beforeId?: string) {
         this._lazyInitEmptyStyle();
         this.style.addLayer(layer, beforeId);
         return this._update(true);
@@ -3127,7 +3196,10 @@ class Map extends Camera {
      * @example
      * map.showTileBoundaries = true;
      */
-    get showTileBoundaries(): boolean { return !!this._showTileBoundaries; }
+    get showTileBoundaries(): boolean {
+        return !!this._showTileBoundaries;
+    }
+
     set showTileBoundaries(value: boolean) {
         if (this._showTileBoundaries === value) return;
         this._showTileBoundaries = value;
@@ -3143,7 +3215,10 @@ class Map extends Camera {
      * @instance
      * @memberof Map
      */
-    get showPadding(): boolean { return !!this._showPadding; }
+    get showPadding(): boolean {
+        return !!this._showPadding;
+    }
+
     set showPadding(value: boolean) {
         if (this._showPadding === value) return;
         this._showPadding = value;
@@ -3161,7 +3236,10 @@ class Map extends Camera {
      * @instance
      * @memberof Map
      */
-    get showCollisionBoxes(): boolean { return !!this._showCollisionBoxes; }
+    get showCollisionBoxes(): boolean {
+        return !!this._showCollisionBoxes;
+    }
+
     set showCollisionBoxes(value: boolean) {
         if (this._showCollisionBoxes === value) return;
         this._showCollisionBoxes = value;
@@ -3187,7 +3265,10 @@ class Map extends Camera {
      * @instance
      * @memberof Map
      */
-    get showOverdrawInspector(): boolean { return !!this._showOverdrawInspector; }
+    get showOverdrawInspector(): boolean {
+        return !!this._showOverdrawInspector;
+    }
+
     set showOverdrawInspector(value: boolean) {
         if (this._showOverdrawInspector === value) return;
         this._showOverdrawInspector = value;
@@ -3203,16 +3284,26 @@ class Map extends Camera {
      * @instance
      * @memberof Map
      */
-    get repaint(): boolean { return !!this._repaint; }
+    get repaint(): boolean {
+        return !!this._repaint;
+    }
+
     set repaint(value: boolean) {
         if (this._repaint !== value) {
             this._repaint = value;
             this.triggerRepaint();
         }
     }
+
     // show vertices
-    get vertices(): boolean { return !!this._vertices; }
-    set vertices(value: boolean) { this._vertices = value; this._update(); }
+    get vertices(): boolean {
+        return !!this._vertices;
+    }
+
+    set vertices(value: boolean) {
+        this._vertices = value;
+        this._update();
+    }
 
     // for cache browser tests
     _setCacheLimits(limit: number, checkThreshold: number) {
@@ -3239,3 +3330,22 @@ class Map extends Camera {
 }
 
 export default Map;
+
+
+function isMapboxURL(url: string) {
+    return url.indexOf('mapbox:') === 0 || url.indexOf('mapabc:') === 0;
+}
+
+function isHttpURL(url: string) {
+    return url.indexOf('http:') === 0 || url.indexOf('https:') === 0;
+}
+
+function isMapboxHTTPURL(url: string): boolean {
+    return config.API_URL_REGEX.test(url);
+}
+
+function hasCacheDefeatingSku(url: string) {
+    return url.indexOf('sku=') > 0 && isMapboxHTTPURL(url);
+}
+
+export {isMapboxURL, isHttpURL, isMapboxHTTPURL, hasCacheDefeatingSku};

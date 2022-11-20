@@ -1,4 +1,5 @@
 import {IResourceType} from './ajax';
+import {isMapboxURL} from "../ui/map";
 import config from '../util/config';
 
 import type {RequestParameters} from './ajax';
@@ -31,12 +32,12 @@ export class RequestManager {
     }
 
     normalizeSpriteURL(url: string, format: string, extension: string): string {
-        const urlObject = this.parseUrl(url);
+        const urlObject = parseUrl(url);
         if (urlObject.protocol == 'http' || urlObject.protocol == 'http' || urlObject.protocol == 'file') {
             urlObject.path += `${format}${extension}`;
-            return this.formatUrl(urlObject);
+            return formatUrl(urlObject);
         } else if (urlObject.protocol == 'mapabc' || urlObject.protocol == 'mapbox') {
-            return this.formatProperStyleUrl(urlObject, format, extension);
+            return formatProperStyleUrl(urlObject, format, extension, this._customAccessToken);
         }
     }
 
@@ -44,9 +45,9 @@ export class RequestManager {
         if (!isMapboxURL(url)) {
             return url;
         }
-        const urlObject = this.parseUrl(url);
+        const urlObject = parseUrl(url);
         urlObject.path = `/fonts/v1${urlObject.path}`;
-        return this.formatProperGlyphsUrl(urlObject, this._customAccessToken || config.ACCESS_TOKEN);
+        return formatProperGlyphsUrl(urlObject, this._customAccessToken || config.ACCESS_TOKEN);
     }
 
     setTransformRequest(transformRequest: RequestTransformFunction) {
@@ -57,58 +58,69 @@ export class RequestManager {
         this._customAccessToken = accessToken;
     }
 
-    formatProperStyleUrl(obj: UrlObject, format: string, extension: string): string {
-        if (obj.protocol == 'mapabc') {
-            let styleName = obj.path.replace('/', '');
-            let styleFileType = extension.replace('.', '');
-            const params = obj.params.length ? `${obj.params.join('&')}` : '';
-            const accessToken = this._customAccessToken || config.ACCESS_TOKEN;
-            return `${config.API_URL}/webglapi/sprite?n=${styleName}${format}&e=${styleFileType}&ak=${accessToken}&${params}`;
-        } else {
-            const params = obj.params.length ? `?${obj.params.join('&')}` : '';
-            return `${obj.protocol}://${obj.authority}${obj.path}${params}`;
-        }
-    }
+}
 
-    formatProperGlyphsUrl(obj: UrlObject, accessToken: string): string {
+const urlRe = /^(\w+):\/\/([^/?]*)(\/[^?]+)?\??(.+)?/;
+
+function parseUrl(url: string): UrlObject {
+    const parts = url.match(urlRe);
+    if (!parts) {
+        throw new Error(`Unable to parse URL "${url}"`);
+    }
+    return {
+        protocol: parts[1],
+        authority: parts[2],
+        path: parts[3] || '/',
+        params: parts[4] ? parts[4].split('&') : []
+    };
+}
+
+function formatUrl(obj: UrlObject): string {
+    const params = obj.params.length ? `?${obj.params.join('&')}` : '';
+    return `${obj.protocol}://${obj.authority}${obj.path}${params}`;
+}
+
+function formatProperGlyphsUrl(obj: UrlObject, accessToken: string): string {
+    const params = obj.params.length ? `${obj.params.join('&')}` : '';
+    //Request URL: http://121.36.99.212:35001/webglapi/fonts?n=sourcehansanscn-normal&r=0-255&ak=ec85d3648154874552835438ac6a02b2
+    return `${config.API_URL}/webglapi/fonts?n={fontstack}&r={range}&ak=${accessToken}&${params}`;
+}
+
+function formatProperStyleUrl(obj: UrlObject, format: string, extension: string, accessToken?: string): string {
+    if (obj.protocol == 'mapabc') {
+        let styleName = obj.path.replace('/', '');
+        let styleFileType = extension.replace('.', '');
         const params = obj.params.length ? `${obj.params.join('&')}` : '';
-        //Request URL: http://121.36.99.212:35001/webglapi/fonts?n=sourcehansanscn-normal&r=0-255&ak=ec85d3648154874552835438ac6a02b2
-        return `${config.API_URL}/webglapi/fonts?n={fontstack}&r={range}&ak=${accessToken}&${params}`;
-    }
-
-    urlRe = /^(\w+):\/\/([^/?]*)(\/[^?]+)?\??(.+)?/;
-
-    parseUrl(url: string): UrlObject {
-        const parts = url.match(this.urlRe);
-        if (!parts) {
-            throw new Error(`Unable to parse URL "${url}"`);
-        }
-        return {
-            protocol: parts[1],
-            authority: parts[2],
-            path: parts[3] || '/',
-            params: parts[4] ? parts[4].split('&') : []
-        };
-    }
-
-    formatUrl(obj: UrlObject): string {
+        accessToken = accessToken || config.ACCESS_TOKEN;
+        return `${config.API_URL}/webglapi/sprite?n=${styleName}${format}&e=${styleFileType}&ak=${accessToken}&${params}`;
+    } else {
         const params = obj.params.length ? `?${obj.params.join('&')}` : '';
         return `${obj.protocol}://${obj.authority}${obj.path}${params}`;
     }
 }
 
-function isMapboxURL(url: string) {
-    return url.indexOf('mapbox:') === 0 || url.indexOf('mapabc:') === 0;
+function makeAPIURL(urlObj: UrlObject, accessToken?: string | null | void): string {
+    const apiUrl = parseUrl(config.API_URL);
+    urlObj.protocol = apiUrl.protocol;
+    urlObj.authority = apiUrl.authority;
+
+    if (urlObj.protocol === 'http') {
+        const i = urlObj.params.indexOf('secure');
+        if (i >= 0) urlObj.params.splice(i, 1);
+    }
+
+    if (apiUrl.path !== '/') {
+        urlObj.path = `${apiUrl.path}${urlObj.path}`;
+    }
+
+    if (!config.REQUIRE_ACCESS_TOKEN) return formatUrl(urlObj);
+
+    accessToken = accessToken || config.ACCESS_TOKEN;
+
+    urlObj.params = urlObj.params.filter((d) => d.indexOf('access_token') === -1);
+    urlObj.params.push(`access_token=${accessToken || ''}`);
+    urlObj.params.push(`ak=${accessToken || ''}`);
+    return formatUrl(urlObj);
 }
 
-function isHttpURL(url: string) {
-    return url.indexOf('http:') === 0 || url.indexOf('https:') === 0;
-}
-
-function isMapboxHTTPURL(url: string): boolean {
-    return config.API_URL_REGEX.test(url);
-}
-
-function hasCacheDefeatingSku(url: string) {
-    return url.indexOf('sku=') > 0 && isMapboxHTTPURL(url);
-}
+export {parseUrl, formatUrl, formatProperGlyphsUrl, formatProperStyleUrl, makeAPIURL}
