@@ -33,7 +33,7 @@ const outputFile = getOutputFile(production, buildMapAbc);
  * 打包配置插件
  */
 let pluginsForRollup = plugins(production);
-let pluginsForRollup2 = [
+let pluginsForRollup2 = production? []:[
     // Ingest the sourcemaps produced in the first step of the build.
     // This is the only reason we use Rollup for this second pass
     sourcemaps()
