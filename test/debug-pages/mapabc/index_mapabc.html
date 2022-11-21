@@ -42,7 +42,10 @@
 
     map.addControl(new mapabcgl.ScaleControl({unit: 'metric'}));
     map.addControl(new mapabcgl.NavigationControl());
-    map.addControl(new mapabcgl.NavControl());
+    map.addControl(new mapabcgl.NavControl({
+        showZoom: true,
+        showCompass: true
+    }));
 
 </script>
 </body>

@@ -274,7 +274,7 @@ const defaultOptions = {
 
     hash: false,
     attributionControl: true,
-    maplibreLogo: false,
+    maplibreLogo: true,
 
     failIfMajorPerformanceCaveat: false,
     preserveDrawingBuffer: false,
