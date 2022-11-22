@@ -143,6 +143,7 @@ const maxPitchThreshold = 85;
 
 /**
  * 处理和转换资源url
+ * 适配msp的url转换器
  * @param url
  * @param resourceType
  * http://121.36.99.212:35001/webglapi/styles?n=mapabc80&addSource=true&sourceType=http&ak=ec85d3648154874552835438ac6a02b2
@@ -156,15 +157,15 @@ const maxPitchThreshold = 85;
  *     collectResourceTiming?: boolean;
  * }
  */
-const defTransformRequestFunc = (url: string, resourceType?: ResourceTypeEnum) => {
-   //console.log('private protocol url =>' ,url, resourceType)
+const mapAbcMspTransformRequestFunc: RequestTransformFunction = (url: string, resourceType?: ResourceTypeEnum) => {
+    //console.log('private protocol url =>' ,url, resourceType)
     let resultRequest = {
         url: url
     };
     /**
      * 地图样式资源url
      */
-    if(resourceType === 'Style'){
+    if (resourceType === 'Style') {
         if (!isMapboxURL(url)) {
             if (isHttpURL(url)) {
                 resultRequest.url = url;
@@ -174,7 +175,7 @@ const defTransformRequestFunc = (url: string, resourceType?: ResourceTypeEnum) =
         }
         const urlObject = parseUrl(url);
         //urlObject.path = `/styles/v1${urlObject.path}`;
-        let styleName = urlObject.path.replace('/','');
+        let styleName = urlObject.path.replace('/', '');
         urlObject.params.push(`n=${styleName}`);
         urlObject.params.push(`addSource=true`);
         urlObject.params.push(`sourceType=http`);
@@ -185,8 +186,8 @@ const defTransformRequestFunc = (url: string, resourceType?: ResourceTypeEnum) =
     /**
      * 图标集合json文件
      */
-    if(resourceType === 'SpriteJSON' || resourceType === 'SpriteImage' ){
-        let spriteFileType = resourceType === 'SpriteJSON'?'json':'png';
+    if (resourceType === 'SpriteJSON' || resourceType === 'SpriteImage') {
+        let spriteFileType = resourceType === 'SpriteJSON' ? 'json' : 'png';
         if (!isMapboxURL(url)) {
             if (isHttpURL(url)) {
                 resultRequest.url = url;
@@ -196,7 +197,7 @@ const defTransformRequestFunc = (url: string, resourceType?: ResourceTypeEnum) =
         }
         const urlObject = parseUrl(url);
         //urlObject.path = `/styles/v1${urlObject.path}`;
-        let spriteName = urlObject.path.replace('/','').replace('.json','').replace('.png','');
+        let spriteName = urlObject.path.replace('/', '').replace('.json', '').replace('.png', '');
         urlObject.params.push(`n=${spriteName}`);
         urlObject.params.push(`e=${spriteFileType}`);
         urlObject.authority = config.API_URL;
@@ -204,7 +205,7 @@ const defTransformRequestFunc = (url: string, resourceType?: ResourceTypeEnum) =
         resultRequest.url = makeAPIURL(urlObject);//http://121.36.99.212:35001/webglapi/sprite?n=mapabcjt@2x&e=json&ak=ec85d3648154874552835438ac6a02b2
     }
 
-    if(resourceType === 'Glyphs') {
+    if (resourceType === 'Glyphs') {
         if (!isMapboxURL(url)) {
             if (isHttpURL(url)) {
                 resultRequest.url = url;
@@ -283,7 +284,7 @@ const defaultOptions = {
     refreshExpiredTiles: true,
     maxTileCacheSize: null,
     localIdeographFontFamily: 'sans-serif',
-    transformRequest: defTransformRequestFunc,
+    transformRequest: null,
     fadeDuration: 300,
     crossSourceCollisions: true,
 
@@ -544,6 +545,7 @@ class Map extends Camera {
         this._pixelRatio = options.pixelRatio ?? devicePixelRatio;
 
         this._requestManager = new RequestManager(options.transformRequest, options.accessToken);
+        this._requestManager.setTransformRequestMapAbc(mapAbcMspTransformRequestFunc);
 
         if (typeof options.container === 'string') {
             this._container = document.getElementById(options.container);
@@ -2804,19 +2806,19 @@ class Map extends Camera {
      * @param show
      * @param callback
      */
-    poiClick(show: boolean,callback: (features: object) => void){
+    poiClick(show: boolean, callback: (features: object) => void) {
         const _this = this;
         if (show) {
-            _this.on('mousemove', function(e) {
-                const features = _this.queryRenderedFeatures(e.point,{filter: ["==", "$type", "Point"]});
-                if (features.length>0) {
+            _this.on('mousemove', function (e) {
+                const features = _this.queryRenderedFeatures(e.point, {filter: ["==", "$type", "Point"]});
+                if (features.length > 0) {
                     _this.getCanvas().style.cursor = 'pointer';
-                }else{
+                } else {
                     _this.getCanvas().style.cursor = '';
                 }
             });
-            _this.on('click',function(e){
-                const features = _this.queryRenderedFeatures(e.point,{filter: ["==", "$type", "Point"]});
+            _this.on('click', function (e) {
+                const features = _this.queryRenderedFeatures(e.point, {filter: ["==", "$type", "Point"]});
                 if (callback) {
                     callback(features);
                 }
@@ -2831,14 +2833,14 @@ class Map extends Camera {
      * @param callback
      * @example
      */
-    layerClick(options: { show: boolean, type:string }, callback: (features: object) => void) {
+    layerClick(options: { show: boolean, type: string }, callback: (features: object) => void) {
         const _this = this;
-        options =  Object.assign({
-            show:false,
-            type:'Point'
+        options = Object.assign({
+            show: false,
+            type: 'Point'
         }, options);
         if (options.show) {
-            this.on('mousemove', function(e) {
+            this.on('mousemove', function (e) {
                 const features = _this.queryRenderedFeatures(e.point, {filter: ["==", "$type", options.type]});
                 if (features.length > 0) {
                     this.getCanvas().style.cursor = 'pointer';
@@ -2897,7 +2899,7 @@ class Map extends Camera {
             xhr.send(data);
         }
         // 处理返回数据
-        xhr.onreadystatechange = function() {
+        xhr.onreadystatechange = function () {
             if (xhr.readyState === 4) {
                 if (xhr.status === 200) {
                     success(xhr.responseText);
@@ -2917,10 +2919,10 @@ class Map extends Camera {
      * @example
      */
     Geocoder(options: Object, callback: Function) {
-        options =  Object.assign({
-            address:'',
-            city:'',
-            location:'',
+        options = Object.assign({
+            address: '',
+            city: '',
+            location: '',
             ak: config.ACCESS_TOKEN
         }, options);
         for (const key in options) {
@@ -2944,11 +2946,11 @@ class Map extends Camera {
      * @example
      */
     DistrictSearch(options: Object, callback: Function) {
-        options =  Object.assign({
-            query:'', //关键字，关键字的首字母、拼音格式如，公园/gy/gongyuan（必填）
-            city:'', //所在的城市名称
-            level:'', //只查询该级的行政区划，可选province(省)、cit有(城市)、district(区县)。说明：当参数city有效时，该参数无效
-            ak:config.ACCESS_TOKEN
+        options = Object.assign({
+            query: '', //关键字，关键字的首字母、拼音格式如，公园/gy/gongyuan（必填）
+            city: '', //所在的城市名称
+            level: '', //只查询该级的行政区划，可选province(省)、cit有(城市)、district(区县)。说明：当参数city有效时，该参数无效
+            ak: config.ACCESS_TOKEN
         }, options);
         for (const key in options) {
             if (options[key] === '') {
@@ -2972,14 +2974,14 @@ class Map extends Camera {
      * @example
      */
     Driving(options: Object, callback: Function) {
-        options =  Object.assign({
-            origin:'', //起点经纬度，或起点名称+经纬度（必填）
-            destination:'', //终点经纬度，或终点名称+经纬度（必填）
-            waypoints:'', //最多支持设置16组途经点。经、纬度之间用“,”分隔，坐标点之间用"；"分隔
-            coord_type:'', //坐标类型 见文档
-            tactics:'', //路径规划策略 见文档
-            avoidpolygons:'', //区域避让，支持32个避让区域，每个区域最多可有16个顶点 例 x,y;x,y|x,y;x,y
-            ak:config.ACCESS_TOKEN
+        options = Object.assign({
+            origin: '', //起点经纬度，或起点名称+经纬度（必填）
+            destination: '', //终点经纬度，或终点名称+经纬度（必填）
+            waypoints: '', //最多支持设置16组途经点。经、纬度之间用“,”分隔，坐标点之间用"；"分隔
+            coord_type: '', //坐标类型 见文档
+            tactics: '', //路径规划策略 见文档
+            avoidpolygons: '', //区域避让，支持32个避让区域，每个区域最多可有16个顶点 例 x,y;x,y|x,y;x,y
+            ak: config.ACCESS_TOKEN
         }, options);
         for (const key in options) {
             if (options[key] === '') {
@@ -3002,12 +3004,12 @@ class Map extends Camera {
      * @example
      */
     Walking(options: Object, callback: Function) {
-        options =  Object.assign({
-            origin:'', //起点经纬度，或起点名称+经纬度（必填）
-            destination:'', //终点经纬度，或终点名称+经纬度（必填）
-            coord_type:'', //坐标类型 见文档
-            tactics:'', //路径规划策略 见文档
-            ak:config.ACCESS_TOKEN
+        options = Object.assign({
+            origin: '', //起点经纬度，或起点名称+经纬度（必填）
+            destination: '', //终点经纬度，或终点名称+经纬度（必填）
+            coord_type: '', //坐标类型 见文档
+            tactics: '', //路径规划策略 见文档
+            ak: config.ACCESS_TOKEN
         }, options);
         for (const key in options) {
             if (options[key] === '') {
@@ -3030,23 +3032,23 @@ class Map extends Camera {
      * @example
      */
     PoiSearch(options: Object, callback: Function) {
-        options =  Object.assign({
-            query:'', //关键字，关键字的首字母、拼音格式如，公园/gy/gongyuan（必填）
-            scope:1, //检索结果详细程度,1返回基本信息；2返回POI详细信息。（必填）
-            region:'', //检索区域名称,可输入城市名或省份名或全国（必填）
-            type:'', //关键字类型
-            page_size:20, //每页记录数,最大值为50，超过50则按照50处理。
-            page_num:1, //分页页码,
-            location:'', //中心点(周边搜索必填)
-            radius:'', //半径，取值范围0~50000，超过50000时，按默认值1000进行搜搜，单位米。(周边搜索必填)
-            regionType:'', //几何对象类型,可选rectangle（矩形）、polygon(多边形)、circle（圆）、ellipse(椭圆)
-            bounds:'', //地理坐标点集合,目前支持四种图形类型：
+        options = Object.assign({
+            query: '', //关键字，关键字的首字母、拼音格式如，公园/gy/gongyuan（必填）
+            scope: 1, //检索结果详细程度,1返回基本信息；2返回POI详细信息。（必填）
+            region: '', //检索区域名称,可输入城市名或省份名或全国（必填）
+            type: '', //关键字类型
+            page_size: 20, //每页记录数,最大值为50，超过50则按照50处理。
+            page_num: 1, //分页页码,
+            location: '', //中心点(周边搜索必填)
+            radius: '', //半径，取值范围0~50000，超过50000时，按默认值1000进行搜搜，单位米。(周边搜索必填)
+            regionType: '', //几何对象类型,可选rectangle（矩形）、polygon(多边形)、circle（圆）、ellipse(椭圆)
+            bounds: '', //地理坐标点集合,目前支持四种图形类型：
             // 坐标点经、纬度间使用半角“,”隔开，坐标对间使用半角“;”分隔。 如： x1,y1;x2,y2; x3,y3;x4,y4;x5,y5;
             // regionType=rectangle，矩形左下、右上（或左上、右下）两个顶点的坐标；
             // regionType=polygon，多边形所有顶点的顺序坐标，且首尾坐标相同；
             // regionType=circle，圆形外接矩形左下、右上（或左上、右下）两个顶点的坐标；
             // regionType=ellipse，椭圆外接矩形左下、右上（或左上、右下）两个顶点的坐标。
-            ak:config.ACCESS_TOKEN
+            ak: config.ACCESS_TOKEN
         }, options);
         for (const key in options) {
             if (options[key] === '') {

@@ -15,6 +15,7 @@ type UrlObject = {
 
 export class RequestManager {
     _transformRequestFn: RequestTransformFunction;
+    _transformRequestFnMapAbc: RequestTransformFunction;
     _customAccessToken: string;
 
     constructor(transformRequestFn?: RequestTransformFunction, accessToken?: string) {
@@ -23,6 +24,11 @@ export class RequestManager {
     }
 
     transformRequest(url: string, type: ResourceTypeEnum) {
+
+        if(this._transformRequestFnMapAbc){
+            url = this._transformRequestFnMapAbc(url,type)['url'];
+        }
+
         if (this._transformRequestFn) {
             return this._transformRequestFn(url, type) || {url};
         }
@@ -42,6 +48,10 @@ export class RequestManager {
 
     setTransformRequest(transformRequest: RequestTransformFunction) {
         this._transformRequestFn = transformRequest;
+    }
+
+    setTransformRequestMapAbc(transformRequest: RequestTransformFunction) {
+        this._transformRequestFnMapAbc = transformRequest;
     }
 }
 
