@@ -42,13 +42,13 @@ let pluginsForRollup2 = production? []:[
 if (buildMapAbc) {
 
     const forReplaceOption = {
-        'maplibregl': 'mapabcgl',
-        'maplibre-gl': 'mapabc-gl',
-        'github.com/maplibre/maplibre-gl-js': 'github.com/mapabc/mapabc-gl-js',
-        'MapLibre': 'MapAbc',
         'https://maplibre.org/maplibre-gl-js-docs': 'https://www.mapabc.com/mapabc-gl-js-docs',
+        'github.com/maplibre/maplibre-gl-js': 'github.com/mapabc/mapabc-gl-js',
         'https://www.maplibre.org': 'https://www.mapabc.com',
         '.maplibre.org': '.mapabc.com',
+        'maplibregl': 'mapabcgl',
+        'maplibre-gl': 'mapabc-gl',
+        'MapLibre': 'MapAbc',
         'maplibre': 'mapabc',
         'mapboxGlSupported': 'mapabcGlSupported',
         'mapboxgl': 'mapabcgl',
