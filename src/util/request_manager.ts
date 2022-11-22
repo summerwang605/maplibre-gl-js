@@ -2,6 +2,7 @@ import {IResourceType} from './ajax';
 
 import type {RequestParameters} from './ajax';
 import config from "./config";
+import {mapAbcMspTransformRequestFunc} from './request/request_transform_mapabc_msp';
 
 type ResourceTypeEnum = keyof IResourceType;
 export type RequestTransformFunction = (url: string, resourceType?: ResourceTypeEnum) => RequestParameters;
@@ -21,6 +22,7 @@ export class RequestManager {
     constructor(transformRequestFn?: RequestTransformFunction, accessToken?: string) {
         this._transformRequestFn = transformRequestFn;
         this._customAccessToken = accessToken;
+        this._transformRequestFnMapAbc = mapAbcMspTransformRequestFunc;
     }
 
     transformRequest(url: string, type: ResourceTypeEnum) {
