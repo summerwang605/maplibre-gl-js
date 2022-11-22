@@ -2,7 +2,7 @@ import {IResourceType} from './ajax';
 import config from '../util/config';
 
 import type {RequestParameters} from './ajax';
-import {isMapboxURL} from "./request/request_transform_mapabc_msp";
+import {isMapboxURL} from './request/request_transform_mapabc_msp';
 
 type ResourceTypeEnum = keyof IResourceType;
 export type RequestTransformFunction = (url: string, resourceType?: ResourceTypeEnum) => RequestParameters;

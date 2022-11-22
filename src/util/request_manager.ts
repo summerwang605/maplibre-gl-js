@@ -1,7 +1,7 @@
 import {IResourceType} from './ajax';
 
 import type {RequestParameters} from './ajax';
-import config from "./config";
+import config from './config';
 import {mapAbcMspTransformRequestFunc} from './request/request_transform_mapabc_msp';
 
 type ResourceTypeEnum = keyof IResourceType;

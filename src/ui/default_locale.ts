@@ -1,4 +1,4 @@
-import {extend} from "../util/util";
+import {extend} from '../util/util';
 
 let defaultLocale = {
     'AttributionControl.ToggleAttribution': 'Toggle attribution',

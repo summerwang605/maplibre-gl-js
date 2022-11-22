@@ -107,8 +107,6 @@ const mapAbcMspTransformRequestFunc: RequestTransformFunction = (url: string, re
     return resultRequest
 };
 
-
-
 function isMapboxURL(url: string) {
     return url.indexOf('mapbox:') === 0 || url.indexOf('mapabc:') === 0;
 }
