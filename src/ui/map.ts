@@ -2242,7 +2242,7 @@ class Map extends Camera {
     trafficLayer(show: boolean, optionsObj: Object) {
         const _this = this;
         //生成默认配置
-        const options = extend({
+        const options = extend({}, {
             minzoom: 1, //最小级别
             maxzoom: 24,  //最大级别
             type: 'vector',  //路况图层类型 默认矢量
@@ -2858,58 +2858,35 @@ class Map extends Camera {
     }
 
     /**
-     * 自封装ajax
-     * @param type
-     * @param url
-     * @param data
-     * @param success
-     * @param failed
+     * 地理编码与逆地理编码
+     * @param requestOptions
+     * @param callback
      * @example
      */
-    ajax(type, url, data, success, failed) {
-        // 创建ajax对象
-        let xhr = null;
-        if (window.XMLHttpRequest) {
-            xhr = new XMLHttpRequest();
-        } else {
-            xhr = new ActiveXObject('Microsoft.XMLHTTP');
-        }
-        type = type.toUpperCase();
-        // 用于清除缓存
-        const random = Math.random();
-        if (typeof data === 'object') {
-            let str = '';
-            for (const key in data) {
-                str += (`${key}=${data[key]}&`);
-            }
-            data = str.replace(/&$/, '');
-        }
-        if (type === 'GET') {
-            if (data) {
-                xhr.open('GET', `${url}?${data}`, true);
-            } else {
-                xhr.open('GET', `${url}?t=${random}`, true);
-            }
-            xhr.send();
-
-        } else if (type === 'POST') {
-            xhr.open('POST', url, true);
-            // 如果需要像 html 表单那样 POST 数据，请使用 setRequestHeader() 来添加 http 头。
-            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-            xhr.send(data);
-        }
-        // 处理返回数据
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    success(xhr.responseText);
-                } else {
-                    if (failed) {
-                        failed(xhr.status);
-                    }
-                }
-            }
+    geocoder(requestOptions: Object, callback: Function) {
+        let defaultOptions = {
+            address: '',
+            city: '',
+            location: '',
+            ak: this.accessToken || config.ACCESS_TOKEN
         };
+        requestOptions = extend({}, defaultOptions, requestOptions);
+        let paramsArray = [];
+        for (const key in requestOptions) {
+            if (requestOptions[key] != '') {
+                paramsArray.push(`${key}=${requestOptions[key]}`);
+            }
+        }
+        let request = {
+            url: `${config.API_URL}/gss/geocode/v2?${paramsArray.join('&')}`
+        }
+        getJSON(request, (error?: Error | null, json?: any | null) => {
+            if (error) {
+                this.fire(new ErrorEvent(error));
+            } else if (json) {
+                callback(json);
+            }
+        });
     }
 
     /**
@@ -2919,23 +2896,32 @@ class Map extends Camera {
      * @example
      */
     Geocoder(options: Object, callback: Function) {
-        options = Object.assign({
-            address: '',
-            city: '',
-            location: '',
-            ak: config.ACCESS_TOKEN
-        }, options);
-        for (const key in options) {
-            if (options[key] === '') {
-                delete options[key];
+        this.geocoder(options, callback);
+    }
+
+    districtSearch(requestOptions: Object, callback: Function) {
+        let defaultOptions = {
+            query: '', //关键字，关键字的首字母、拼音格式如，公园/gy/gongyuan（必填）
+            city: '', //所在的城市名称
+            level: '', //只查询该级的行政区划，可选province(省)、cit有(城市)、district(区县)。说明：当参数city有效时，该参数无效
+            ak: this.accessToken || config.ACCESS_TOKEN
+        };
+        requestOptions = extend({}, defaultOptions, requestOptions);
+        let paramsArray = [];
+        for (const key in requestOptions) {
+            if (requestOptions[key] != '') {
+                paramsArray.push(`${key}=${requestOptions[key]}`);
             }
         }
-        this.ajax('get', `${config.API_URL}/gss/geocode/v2`, options, (data) => {
-            if (callback) {
-                callback(JSON.parse(data));
+        let request = {
+            url: `${config.API_URL}/gss/district/v2?${paramsArray.join('&')}`
+        }
+        getJSON(request, (error?: Error | null, json?: any | null) => {
+            if (error) {
+                this.fire(new ErrorEvent(error));
+            } else if (json) {
+                callback(json);
             }
-        }, (error) => {
-            console.log(error);
         });
     }
 
@@ -2946,24 +2932,42 @@ class Map extends Camera {
      * @example
      */
     DistrictSearch(options: Object, callback: Function) {
-        options = Object.assign({
-            query: '', //关键字，关键字的首字母、拼音格式如，公园/gy/gongyuan（必填）
-            city: '', //所在的城市名称
-            level: '', //只查询该级的行政区划，可选province(省)、cit有(城市)、district(区县)。说明：当参数city有效时，该参数无效
-            ak: config.ACCESS_TOKEN
-        }, options);
-        for (const key in options) {
-            if (options[key] === '') {
-                delete options[key];
+        this.districtSearch(options, callback);
+    }
+
+
+    /**
+     * 车行路径规划
+     * @param options
+     * @param callback
+     * @example
+     */
+    driving(requestOptions: Object, callback: Function){
+        let defaultOptions = {
+            origin: '', //起点经纬度，或起点名称+经纬度（必填）
+            destination: '', //终点经纬度，或终点名称+经纬度（必填）
+            waypoints: '', //最多支持设置16组途经点。经、纬度之间用“,”分隔，坐标点之间用"；"分隔
+            coord_type: '', //坐标类型 见文档
+            tactics: '', //路径规划策略 见文档
+            avoidpolygons: '', //区域避让，支持32个避让区域，每个区域最多可有16个顶点 例 x,y;x,y|x,y;x,y
+            ak: this.accessToken || config.ACCESS_TOKEN
+        };
+        requestOptions = extend({}, defaultOptions, requestOptions);
+        let paramsArray = [];
+        for (const key in requestOptions) {
+            if (requestOptions[key] != '') {
+                paramsArray.push(`${key}=${requestOptions[key]}`);
             }
         }
-        this.ajax('get', `${config.API_URL}/gss/district/v2`, options, (data) => {
-            if (callback) {
-                callback(JSON.parse(data));
+        let request = {
+            url: `${config.API_URL}/as/route/car?${paramsArray.join('&')}`
+        }
+        getJSON(request, (error?: Error | null, json?: any | null) => {
+            if (error) {
+                this.fire(new ErrorEvent(error));
+            } else if (json) {
+                callback(json);
             }
-
-        }, (error) => {
-            console.log(error);
         });
     }
 
@@ -2974,26 +2978,39 @@ class Map extends Camera {
      * @example
      */
     Driving(options: Object, callback: Function) {
-        options = Object.assign({
+        this.driving(options, callback)
+    }
+
+    /**
+     * 步行路径规划
+     * @param options
+     * @param callback
+     * @example
+     */
+    walking(requestOptions: Object, callback: Function){
+        let defaultOptions = {
             origin: '', //起点经纬度，或起点名称+经纬度（必填）
             destination: '', //终点经纬度，或终点名称+经纬度（必填）
-            waypoints: '', //最多支持设置16组途经点。经、纬度之间用“,”分隔，坐标点之间用"；"分隔
             coord_type: '', //坐标类型 见文档
             tactics: '', //路径规划策略 见文档
-            avoidpolygons: '', //区域避让，支持32个避让区域，每个区域最多可有16个顶点 例 x,y;x,y|x,y;x,y
-            ak: config.ACCESS_TOKEN
-        }, options);
-        for (const key in options) {
-            if (options[key] === '') {
-                delete options[key];
+            ak: this.accessToken || config.ACCESS_TOKEN
+        };
+        requestOptions = extend({}, defaultOptions, requestOptions);
+        let paramsArray = [];
+        for (const key in requestOptions) {
+            if (requestOptions[key] != '') {
+                paramsArray.push(`${key}=${requestOptions[key]}`);
             }
         }
-        this.ajax('get', `${config.API_URL}/as/route/car`, options, (data) => {
-            if (callback) {
-                callback(JSON.parse(data));
+        let request = {
+            url: `${config.API_URL}/as/route/walk?${paramsArray.join('&')}`
+        }
+        getJSON(request, (error?: Error | null, json?: any | null) => {
+            if (error) {
+                this.fire(new ErrorEvent(error));
+            } else if (json) {
+                callback(json);
             }
-        }, (error) => {
-            console.log(error);
         });
     }
 
@@ -3004,35 +3021,16 @@ class Map extends Camera {
      * @example
      */
     Walking(options: Object, callback: Function) {
-        options = Object.assign({
-            origin: '', //起点经纬度，或起点名称+经纬度（必填）
-            destination: '', //终点经纬度，或终点名称+经纬度（必填）
-            coord_type: '', //坐标类型 见文档
-            tactics: '', //路径规划策略 见文档
-            ak: config.ACCESS_TOKEN
-        }, options);
-        for (const key in options) {
-            if (options[key] === '') {
-                delete options[key];
-            }
-        }
-        this.ajax('get', `${config.API_URL}/as/route/walk`, options, (data) => {
-            if (callback) {
-                callback(JSON.parse(data));
-            }
-        }, (error) => {
-            console.log(error);
-        });
+        this.walking(options, callback);
     }
 
-    /**.
+    /**
      * Poi搜索（关键字、多边形、周边）.
-     * @param options
+     * @param requestParams
      * @param callback
-     * @example
      */
-    PoiSearch(options: Object, callback: Function) {
-        options = Object.assign({
+    poiSearch(requestParams: {}, callback: Function){
+        let defaultParams = {
             query: '', //关键字，关键字的首字母、拼音格式如，公园/gy/gongyuan（必填）
             scope: 1, //检索结果详细程度,1返回基本信息；2返回POI详细信息。（必填）
             region: '', //检索区域名称,可输入城市名或省份名或全国（必填）
@@ -3048,20 +3046,35 @@ class Map extends Camera {
             // regionType=polygon，多边形所有顶点的顺序坐标，且首尾坐标相同；
             // regionType=circle，圆形外接矩形左下、右上（或左上、右下）两个顶点的坐标；
             // regionType=ellipse，椭圆外接矩形左下、右上（或左上、右下）两个顶点的坐标。
-            ak: config.ACCESS_TOKEN
-        }, options);
-        for (const key in options) {
-            if (options[key] === '') {
-                delete options[key];
+            ak: this.accessToken || config.ACCESS_TOKEN
+        };
+        requestParams = extend({}, defaultParams, requestParams);
+        let paramsArray = [];
+        for (const key in requestParams) {
+            if (requestParams[key] != '') {
+                paramsArray.push(`${key}=${requestParams[key]}`);
             }
         }
-        this.ajax('get', `${config.API_URL}/as/search/poi`, options, (data) => {
-            if (callback) {
-                callback(JSON.parse(data));
+        let request = {
+            url: `${config.API_URL}/as/search/poi?${paramsArray.join('&')}`
+        }
+        getJSON(request, (error?: Error | null, json?: any | null) => {
+            if (error) {
+                this.fire(new ErrorEvent(error));
+            } else if (json) {
+                callback(json);
             }
-        }, (error) => {
-            console.log(error);
         });
+    }
+
+    /**.
+     * Poi搜索（关键字、多边形、周边）.
+     * @param options
+     * @param callback
+     * @example
+     */
+    PoiSearch(options: Object, callback: Function) {
+       this.poiSearch(options, callback);
     }
 
     _containerDimensions() {
