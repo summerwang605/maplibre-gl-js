@@ -14,8 +14,8 @@ type Config = {
     TILE_URL_VERSION: string,
     RASTER_URL_PREFIX: string,
     ACCESS_TOKEN: string,
-    TRAFFIC_SOURCE: Object,
-    TRAFFIC_SOURCE_: Object,
+    TRAFFIC_SOURCE: { raster: Object, vector: Object },
+    TRAFFIC_SOURCE_: { raster: Object, vector: Object },
     MAX_PARALLEL_IMAGE_REQUESTS: number;
     REGISTERED_PROTOCOLS: { [x: string]: any };
 };

@@ -28,39 +28,41 @@
     mapabcgl.accessToken = 'ec85d3648154874552835438ac6a02b2';
     var map = window.map = new mapabcgl.Map({
         container: 'map',
-        //center: [11.8494, 47.4434],
-        center: [116.50968755,40.52019449],
+        center: [116.2569, 39.9232],
         zoom: 10,
         //style: 'mapabc79w.json',
-        style: 'mapabc://styles/mapabc79w',
+        style: {version: 8, sources: {}, layers: []},
         hash: true,
         accessToken: 'ec85d3648154874552835438ac6a02b2' //map options
     });
 
     map.on('load', function () {
-        console.log('mapabcgl loaded..');
-        map.addSource('osm', {
-            type: 'raster',
-            tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution: '&copy; OpenStreetMap Contributors',
-            maxzoom: 19
+        console.log('mapabcgl loaded..')
+
+
+        map.addSource('hillshadeSource', {
+            type: 'raster-dem',
+            url: 'http://localhost:9966/test/debug-pages/mapabc/js/terrain-tiles.json',
+            tileSize: 256
+        })
+        map.addSource('satellite', {
+            "type": "raster",
+            "tiles": ["https://webst03.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}"],
+            "tileSize": 256
         })
         map.addSource('terrainSource', {
             type: 'raster-dem',
             url: 'http://localhost:9966/test/debug-pages/mapabc/js/terrain-tiles.json',
             tileSize: 256
         })
-        map.addSource('hillshadeSource', {
-            type: 'raster-dem',
-            url: 'http://localhost:9966/test/debug-pages/mapabc/js/terrain-tiles.json',
-            tileSize: 256
-        })
-        /*map.addLayer({
-            id: 'osm',
-            type: 'raster',
-            source: 'osm'
-        });*/
+        let rasterLayer = {
+            "id": 'traffic-raster',
+            "type": "raster",
+            "source": 'satellite'
+        }
+        map.addLayer(rasterLayer);
+
+
         map.addLayer({
             id: 'hills',
             type: 'hillshade',
@@ -68,6 +70,7 @@
             layout: {visibility: 'visible'},
             paint: {'hillshade-shadow-color': '#473B24'}
         });
+
         map.setTerrain({
             source: 'terrainSource',
             exaggeration: 1
@@ -80,13 +83,13 @@
         showZoom: true,
         showCompass: true
     }));
+
     map.addControl(
         new mapabcgl.TerrainControl({
             source: 'terrainSource',
             exaggeration: 1
         })
     );
-
 
 </script>
 </body>
