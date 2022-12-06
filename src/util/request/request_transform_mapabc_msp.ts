@@ -1,6 +1,7 @@
 import {makeAPIURL, parseUrl, RequestTransformFunction} from '../request_manager';
 import config from '../config';
 import {IResourceType} from '../ajax';
+
 type ResourceTypeEnum = keyof IResourceType;
 /**
  * 处理和转换资源url
@@ -19,93 +20,96 @@ type ResourceTypeEnum = keyof IResourceType;
  * }
  */
 const mapAbcMspTransformRequestFunc: RequestTransformFunction = (url: string, resourceType?: ResourceTypeEnum) => {
-    //console.log('private protocol url =>' ,url, resourceType)
-    let resultRequest = {
-        url: url
-    };
-    /**
-     * 地图样式资源url
-     */
-    if (resourceType === 'Style') {
-        if (!isMapboxURL(url)) {
-            if (isHttpURL(url)) {
+        //console.log('private protocol url =>' ,url, resourceType)
+        let resultRequest = {
+            url: url
+        };
+        /**
+         * 地图样式资源url
+         */
+        if (resourceType === 'Style') {
+            if (isMapboxURL(url) && !isHttpURL(url) ) {
+                if(!isHttpURL(url)){
+                    url = `mapabc://style/${url}`;
+                }
+                const urlObject = parseUrl(url);
+                //urlObject.path = `/styles/v1${urlObject.path}`;
+                let styleName = urlObject.path.replace('/', '');
+                urlObject.params.push(`n=${styleName}`);
+                urlObject.params.push(`addSource=true`);
+                urlObject.params.push(`sourceType=http`);
+                urlObject.authority = config.API_URL;
+                urlObject.path = '/webglapi/styles';
+                resultRequest.url = makeAPIURL(urlObject);//`${config.API_URL}/webglapi/styles?n=${url}&addSource=true&sourceType=http&ak=${config.ACCESS_TOKEN}`;
+            } else if (isHttpURL(url)) {
                 resultRequest.url = url;
             } else {
-                url = `mapabc://style/${url}`;
-            }
-        }
-        const urlObject = parseUrl(url);
-        //urlObject.path = `/styles/v1${urlObject.path}`;
-        let styleName = urlObject.path.replace('/', '');
-        urlObject.params.push(`n=${styleName}`);
-        urlObject.params.push(`addSource=true`);
-        urlObject.params.push(`sourceType=http`);
-        urlObject.authority = config.API_URL;
-        urlObject.path = '/webglapi/styles';
-        resultRequest.url = makeAPIURL(urlObject);//`${config.API_URL}/webglapi/styles?n=${url}&addSource=true&sourceType=http&ak=${config.ACCESS_TOKEN}`;
-    }
-    /**
-     * 图标集合json文件
-     */
-    if (resourceType === 'SpriteJSON' || resourceType === 'SpriteImage') {
-        let spriteFileType = resourceType === 'SpriteJSON' ? 'json' : 'png';
-        if (!isMapboxURL(url)) {
-            if (isHttpURL(url)) {
                 resultRequest.url = url;
-            } else {
-                url = `mapabc://sprites/${url}.${spriteFileType}`;
             }
         }
-        const urlObject = parseUrl(url);
-        //urlObject.path = `/styles/v1${urlObject.path}`;
-        let spriteName = urlObject.path.replace('/', '').replace('.json', '').replace('.png', '');
-        urlObject.params.push(`n=${spriteName}`);
-        urlObject.params.push(`e=${spriteFileType}`);
-        urlObject.authority = config.API_URL;
-        urlObject.path = '/webglapi/sprite';
-        resultRequest.url = makeAPIURL(urlObject);//http://121.36.99.212:35001/webglapi/sprite?n=mapabcjt@2x&e=json&ak=ec85d3648154874552835438ac6a02b2
-    }
+        /**
+         * 图标集合json文件
+         */
+        if (resourceType === 'SpriteJSON' || resourceType === 'SpriteImage') {
+            let spriteFileType = resourceType === 'SpriteJSON' ? 'json' : 'png';
+            if (!isMapboxURL(url)) {
+                if (isHttpURL(url)) {
+                    resultRequest.url = url;
+                } else {
+                    url = `mapabc://sprites/${url}.${spriteFileType}`;
+                }
+            }
+            const urlObject = parseUrl(url);
+            //urlObject.path = `/styles/v1${urlObject.path}`;
+            let spriteName = urlObject.path.replace('/', '').replace('.json', '').replace('.png', '');
+            urlObject.params.push(`n=${spriteName}`);
+            urlObject.params.push(`e=${spriteFileType}`);
+            urlObject.authority = config.API_URL;
+            urlObject.path = '/webglapi/sprite';
+            resultRequest.url = makeAPIURL(urlObject);//http://121.36.99.212:35001/webglapi/sprite?n=mapabcjt@2x&e=json&ak=ec85d3648154874552835438ac6a02b2
+        }
 
-    if (resourceType === 'Glyphs') {
-        if (!isMapboxURL(url)) {
-            if (isHttpURL(url)) {
-                resultRequest.url = url;
-            } else {
-                url = `mapabc://glyphs/${url}/{range}.pbf`;
+        if (resourceType === 'Glyphs') {
+            if (!isMapboxURL(url)) {
+                if (isHttpURL(url)) {
+                    resultRequest.url = url;
+                } else {
+                    url = `mapabc://glyphs/${url}/{range}.pbf`;
+                }
+            }
+            const urlObject = parseUrl(url);
+            //path: "/sourcehansanscn-normal/8192-8447.pbf"
+            let fontInfoArr = urlObject.path.split('/');
+            let fontstack = fontInfoArr[1];
+            let range = fontInfoArr[2].split('.')[0];
+            urlObject.params.push(`n=${fontstack}`);
+            urlObject.params.push(`r=${range}`);
+            urlObject.authority = config.API_URL;
+            urlObject.path = '/webglapi/fonts';
+            resultRequest.url = makeAPIURL(urlObject); // Request URL: http://121.36.99.212:35001/webglapi/fonts?n=sourcehansanscn-normal&r=0-255&ak=ec85d3648154874552835438ac6a02b2
+        }
+
+        if (resourceType === 'Image') {
+
+        }
+        if (resourceType === 'Tile') {
+
+        }
+        if (resourceType === 'Unknown') {
+
+        }
+
+        if (resourceType === 'Source' && url.indexOf('http://myHost') > -1) {
+            return {
+                url: url.replace('http', 'https'),
+                headers: {'my-custom-header': true},
+                credentials: 'include'  // Include cookies for cross-origin requests
             }
         }
-        const urlObject = parseUrl(url);
-        //path: "/sourcehansanscn-normal/8192-8447.pbf"
-        let fontInfoArr = urlObject.path.split('/');
-        let fontstack = fontInfoArr[1];
-        let range = fontInfoArr[2].split('.')[0];
-        urlObject.params.push(`n=${fontstack}`);
-        urlObject.params.push(`r=${range}`);
-        urlObject.authority = config.API_URL;
-        urlObject.path = '/webglapi/fonts';
-        resultRequest.url = makeAPIURL(urlObject); // Request URL: http://121.36.99.212:35001/webglapi/fonts?n=sourcehansanscn-normal&r=0-255&ak=ec85d3648154874552835438ac6a02b2
+//console.log('target resource url =>' ,resultRequest.url, resourceType)
+        return resultRequest
     }
-
-    if (resourceType === 'Image') {
-
-    }
-    if (resourceType === 'Tile') {
-
-    }
-    if (resourceType === 'Unknown') {
-
-    }
-
-    if (resourceType === 'Source' && url.indexOf('http://myHost') > -1) {
-        return {
-            url: url.replace('http', 'https'),
-            headers: {'my-custom-header': true},
-            credentials: 'include'  // Include cookies for cross-origin requests
-        }
-    }
-    //console.log('target resource url =>' ,resultRequest.url, resourceType)
-    return resultRequest
-};
+;
 
 function isMapboxURL(url: string) {
     return url.indexOf('mapbox:') === 0 || url.indexOf('mapabc:') === 0;
