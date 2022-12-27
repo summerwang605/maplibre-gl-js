@@ -52,12 +52,10 @@ const mapAbcMspTransformRequestFunc: RequestTransformFunction = (url: string, re
         let spriteFileType = resourceType === 'SpriteJSON' ? 'json' : 'png';
         if (!isMapboxURL(url) && !isHttpURL(url)) {
             url = `mapabc://sprites/${url}.${spriteFileType}`;
-
         }
         if (isHttpURL(url)) {
             resultRequest.url = url;
         } else {
-            url = `mapabc://sprites/${url}.${spriteFileType}`;
             const urlObject = parseUrl(url);
             //urlObject.path = `/styles/v1${urlObject.path}`;
             let spriteName = urlObject.path.replace('/', '').replace('.json', '').replace('.png', '');
