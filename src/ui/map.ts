@@ -63,7 +63,6 @@ import Terrain from '../render/terrain';
 import RenderToTexture from '../render/render_to_texture';
 import {districtSearch, driving, geocoder, poiSearch, walking} from '../util/msp_api/msp_api';
 const version = packageJSON.version;
-
 /* eslint-enable no-use-before-define */
 export type MapOptions = {
     hash?: boolean | string;
@@ -127,6 +126,13 @@ type Complete<T> = {
 
 // This type is used inside map since all properties are assigned a default value.
 export type CompleteMapOptions = Complete<MapOptions>;
+
+type QueryRenderedFeaturesOptions = {
+    layers?: Array<string>;
+    filter?: FilterSpecification;
+    availableImages?: Array<string>;
+    validate?: boolean;
+};
 
 const defaultMinZoom = -2;
 const defaultMaxZoom = 22;
@@ -1268,17 +1274,19 @@ class Map extends Camera {
      * Returns an array of MapGeoJSONFeature objects
      * representing visible features that satisfy the query parameters.
      *
-     * @param {PointLike|Array<PointLike>} [geometry] - The geometry of the query region:
+     * @param {PointLike|Array<PointLike>|QueryRenderedFeaturesOptions} [geometryOrOptions] (optional) The geometry of the query region:
      * either a single point or southwest and northeast points describing a bounding box.
      * Omitting this parameter (i.e. calling {@link Map#queryRenderedFeatures} with zero arguments,
      * or with only a `options` argument) is equivalent to passing a bounding box encompassing the entire
      * map viewport.
-     * @param {Object} [options] Options object.
-     * @param {Array<string>} [options.layers] An array of [style layer IDs](https://maplibre.org/maplibre-gl-js-docs/style-spec/#layer-id) for the query to inspect.
+     * The geometryOrOptions can receive a QueryRenderedFeaturesOptions only to support a situation where the function receives only one parameter which is the options parameter.
+     * @param {QueryRenderedFeaturesOptions} [options] (optional) Options object.
+     * @param {Array<string>} [options.layers] (optional) An array of [style layer IDs](https://maplibre.org/maplibre-gl-js-docs/style-spec/#layer-id) for the query to inspect.
      *   Only features within these layers will be returned. If this parameter is undefined, all layers will be checked.
-     * @param {Array} [options.filter] A [filter](https://maplibre.org/maplibre-gl-js-docs/style-spec/layers/#filter)
+     * @param {FilterSpecification} [options.filter] (optional) A [filter](https://maplibre.org/maplibre-gl-js-docs/style-spec/layers/#filter)
      *   to limit query results.
-     * @param {boolean} [options.validate=true] Whether to check if the [options.filter] conforms to the MapLibre GL Style Specification. Disabling validation is a performance optimization that should only be used if you have previously validated the values you will be passing to this function.
+     * @param {Array<string>} [options.availableImages] (optional) An array of string representing the available images
+     * @param {boolean} [options.validate=true] (optional) Whether to check if the [options.filter] conforms to the MapLibre GL Style Specification. Disabling validation is a performance optimization that should only be used if you have previously validated the values you will be passing to this function.
      *
      * @returns {Array<MapGeoJSONFeature>} An array of MapGeoJSONFeature objects.
      *
@@ -1300,7 +1308,7 @@ class Map extends Camera {
      * 0.
      *
      * The topmost rendered feature appears first in the returned array, and subsequent features are sorted by
-     * descending z-order. Features that are rendered multiple times (due to wrapping across the antimeridian at low
+     * descending z-order. Features that are rendered multiple times (due to wrapping across the antemeridian at low
      * zoom levels) are returned only once (though subject to the following caveat).
      *
      * Because features come from tiled vector data or GeoJSON data that is converted to tiles internally, feature
@@ -1339,29 +1347,15 @@ class Map extends Camera {
      * var features = map.queryRenderedFeatures({ layers: ['my-layer-name'] });
      * @see [Get features under the mouse pointer](https://maplibre.org/maplibre-gl-js-docs/example/queryrenderedfeatures/)
      */
-    queryRenderedFeatures(geometry?: PointLike | [PointLike, PointLike], options?: any): MapGeoJSONFeature[] {
-        // The first parameter can be omitted entirely, making this effectively an overloaded method
-        // with two signatures:
-        //
-        //     queryRenderedFeatures(geometry: PointLike | [PointLike, PointLike], options?: Object)
-        //     queryRenderedFeatures(options?: Object)
-        //
-        // There no way to express that in a way that's compatible with both flow and documentation.js.
-        // Related: https://github.com/facebook/flow/issues/1556
-
+    queryRenderedFeatures(geometryOrOptions?: PointLike | [PointLike, PointLike] | QueryRenderedFeaturesOptions, options?: QueryRenderedFeaturesOptions): MapGeoJSONFeature[] {
         if (!this.style) {
             return [];
         }
-
-        if (options === undefined && geometry !== undefined && !(geometry instanceof Point) && !Array.isArray(geometry)) {
-            options = geometry;
-            geometry = undefined;
-        }
-
-        options = options || {};
-        geometry = geometry || [[0, 0], [this.transform.width, this.transform.height]];
-
         let queryGeometry;
+        const isGeometry = geometryOrOptions instanceof Point || Array.isArray(geometryOrOptions);
+        const geometry = isGeometry ? geometryOrOptions : [[0, 0], [this.transform.width, this.transform.height]];
+        options = options || (isGeometry ? {} : geometryOrOptions) || {};
+
         if (geometry instanceof Point || typeof geometry[0] === 'number') {
             queryGeometry = [Point.convert(geometry as PointLike)];
         } else {
@@ -2500,6 +2494,98 @@ class Map extends Camera {
      */
     getLayoutProperty(layerId: string, name: string) {
         return this.style.getLayoutProperty(layerId, name);
+    }
+
+    /**
+     * Sets the value of the style's glyphs property.
+     *
+     * @param glyphsUrl Glyph URL to set. Must conform to the [MapLibre Style Specification](https://maplibre.org/maplibre-gl-js-docs/style-spec/glyphs/).
+     * @param {StyleSetterOptions} [options] Options object.
+     * @param {boolean} [options.validate=true] Whether to check if the filter conforms to the MapLibre GL Style Specification. Disabling validation is a performance optimization that should only be used if you have previously validated the values you will be passing to this function.
+     * @returns {Map} `this`
+     * @example
+     * map.setGlyphs('https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf');
+     */
+    setGlyphs(glyphsUrl: string | null, options: StyleSetterOptions = {}) {
+        this._lazyInitEmptyStyle();
+        this.style.setGlyphs(glyphsUrl, options);
+        return this._update(true);
+    }
+
+    /**
+     * Returns the value of the style's glyphs URL
+     *
+     * @returns {string | null} glyphs Style's glyphs url
+     */
+    getGlyphs() {
+        return this.style.getGlyphsUrl();
+    }
+
+    /**
+     * Adds a sprite to the map's style.
+     *
+     * @param {string} id The ID of the sprite to add. Must not conflict with existing sprites.
+     * @param {string} url The URL to load the sprite from
+     * @param {StyleSetterOptions} [options] Options object.
+     * @fires style
+     * @returns {Map} `this`
+     * @example
+     * map.addSprite('sprite-two', 'http://example.com/sprite-two');
+     */
+    addSprite(id: string, url: string, options: StyleSetterOptions = {}) {
+        this._lazyInitEmptyStyle();
+        this.style.addSprite(id, url, options, (err) => {
+            if (!err) {
+                this._update(true);
+            }
+        });
+        return this;
+    }
+
+    /**
+     * Removes the sprite from the map's style.
+     *
+     * @param {string} id The ID of the sprite to remove. If the sprite is declared as a single URL, the ID must be "default".
+     * @fires style
+     * @returns {Map} `this`
+     * @example
+     * map.removeSprite('sprite-two');
+     * @example
+     * map.removeSprite('default');
+     */
+    removeSprite(id: string) {
+        this._lazyInitEmptyStyle();
+        this.style.removeSprite(id);
+        return this._update(true);
+    }
+
+    /**
+     * Returns the as-is value of the style's sprite.
+     *
+     * @returns {SpriteSpecification | undefined} style's sprite url or a list of id-url pairs
+     */
+    getSprite() {
+        return this.style.getSprite();
+    }
+
+    /**
+     * Sets the value of the style's sprite property.
+     *
+     * @param spriteUrl Sprite URL to set.
+     * @param {StyleSetterOptions} [options] Options object.
+     * @param {boolean} [options.validate=true] Whether to check if the filter conforms to the MapLibre GL Style Specification. Disabling validation is a performance optimization that should only be used if you have previously validated the values you will be passing to this function.
+     * @returns {Map} `this`
+     * @example
+     * map.setSprite('YOUR_SPRITE_URL');
+     */
+    setSprite(spriteUrl: string | null, options: StyleSetterOptions = {}) {
+        this._lazyInitEmptyStyle();
+        this.style.setSprite(spriteUrl, options, (err) => {
+            if (!err) {
+                this._update(true);
+            }
+        });
+        return this;
     }
 
     /**

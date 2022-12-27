@@ -5,7 +5,6 @@ import replace from '@rollup/plugin-replace';
 import banner from './build/banner';
 import bannerMapAbc from './build/banner-mapabc';
 import {RollupOptions} from 'rollup';
-import {importAssertions} from 'acorn-import-assertions';
 
 const {BUILD, MAPABC} = process.env;
 const production = BUILD === 'production';
