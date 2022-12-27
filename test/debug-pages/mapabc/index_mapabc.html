@@ -39,16 +39,16 @@
 
     map.on('load', function () {
         console.log('mapabcgl loaded..')
-        map.setTerrain({
-            source: 'terrainSource',
-            exaggeration: 1
-        });
-        map.addControl(
-            new mapabcgl.TerrainControl({
-                source: 'terrainSource',
-                exaggeration: 1
-            })
-        );
+        // map.setTerrain({
+        //     source: 'terrainSource',
+        //     exaggeration: 1
+        // });
+        // map.addControl(
+        //     new mapabcgl.TerrainControl({
+        //         source: 'terrainSource',
+        //         exaggeration: 1
+        //     })
+        // );
     });
 
     map.addControl(new mapabcgl.ScaleControl({unit: 'metric'}));
