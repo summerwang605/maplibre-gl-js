@@ -49,8 +49,8 @@ class NavControl {
     _amapRotateRight: HTMLElement;
     _compass: HTMLElement;
     _compassArrow: HTMLElement;
-    _handler: MouseRotateWrapper;
-    _amapHandler: MouseRotateWrapper;
+    _handler: NavMouseRotateWrapper;
+    _amapHandler: NavMouseRotateWrapper;
     _intervalFunc: NodeJS.Timer;
 
     constructor(options: NavOptions) {
@@ -187,7 +187,7 @@ class NavControl {
             this._map.on('rotate', this._rotateCompassArrow);
             this._map.on('pitch', this._rotateCompassArrow);
             this._rotateCompassArrow();
-            this._handler = new MouseRotateWrapper(map, this._amapCompass, this.options.visualizePitch);
+            this._handler = new NavMouseRotateWrapper(map, this._amapCompass, this.options.visualizePitch);
             DOM.addEventListener(this._amapCompass, 'mousedown', this._handler.mousedown);
             this._handler.reset();
         }
@@ -277,7 +277,7 @@ class NavControl {
 }
 
 
-class MouseRotateWrapper {
+class NavMouseRotateWrapper {
 
     map: Map;
     _clickTolerance: number;
