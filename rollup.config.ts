@@ -77,9 +77,9 @@ if (buildMapAbc) {
 const config: RollupOptions[] = [{
     // Before rollup you should run build-tsc to transpile from typescript to javascript (except when running rollup in watch mode)
     // Rollup will use code splitting to bundle GL JS into three "chunks":
-    // - rollup/build/maplibregl/index.js: the main module, plus all its dependencies not shared by the worker module
-    // - rollup/build/maplibregl/worker.js: the worker module, plus all dependencies not shared by the main module
-    // - rollup/build/maplibregl/shared.js: the set of modules that are dependencies of both the main module and the worker module
+    // - staging/maplibregl/index.js: the main module, plus all its dependencies not shared by the worker module
+    // - staging/maplibregl/worker.js: the worker module, plus all dependencies not shared by the main module
+    // - staging/maplibregl/shared.js: the set of modules that are dependencies of both the main module and the worker module
     //
     // This is also where we do all of our source transformations using the plugins.
     input: ['src/index.ts', 'src/source/worker.ts'],
@@ -102,7 +102,7 @@ const config: RollupOptions[] = [{
         name: nameSpace + 'gl', // 生成命名空间名称
         file: outputFile,
         format: 'umd',
-        sourcemap: production ? true : 'inline',
+        sourcemap: true,
         indent: false,
         intro: fs.readFileSync('./rollup/bundle_prelude_' + nameSpace + 'gl.js', 'utf8'),
         banner: fileBanner
