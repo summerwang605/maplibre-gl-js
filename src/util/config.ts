@@ -18,10 +18,12 @@ type Config = {
     TRAFFIC_SOURCE_: { raster: Object, vector: Object },
     MAX_PARALLEL_IMAGE_REQUESTS: number;
     REGISTERED_PROTOCOLS: { [x: string]: any };
+    MAX_PARALLEL_IMAGE_REQUESTS_PER_FRAME: number;
 };
 let mapboxHTTPURLRegex;
 const config: Config = {
     MAX_PARALLEL_IMAGE_REQUESTS: 16,
+    MAX_PARALLEL_IMAGE_REQUESTS_PER_FRAME: 8,
     REGISTERED_PROTOCOLS: {},
     API_VERSION: '2', //默认为 2 是mapbox的接口url  2为旧版本的msp的接口url  3 为 erupt版本的msp接口url
     REPORT_MAP_EVENTS: false, // 默认不上报
