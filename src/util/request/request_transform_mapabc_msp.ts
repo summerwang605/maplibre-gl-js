@@ -1,8 +1,6 @@
-import {makeAPIURL, parseUrl, RequestTransformFunction} from '../request_manager';
+import {makeAPIURL, parseUrl, RequestTransformFunction, ResourceType} from '../request_manager';
 import config from '../config';
-import {IResourceType} from '../ajax';
 
-type ResourceTypeEnum = keyof IResourceType;
 /**
  * 处理和转换资源url
  * 适配msp的url转换器
@@ -19,7 +17,7 @@ type ResourceTypeEnum = keyof IResourceType;
  *     collectResourceTiming?: boolean;
  * }
  */
-const mapAbcMspTransformRequestFunc: RequestTransformFunction = (url: string, resourceType?: ResourceTypeEnum) => {
+const mapAbcMspTransformRequestFunc: RequestTransformFunction = (url: string, resourceType?: ResourceType) => {
     //console.log('private protocol url =>' ,url, resourceType)
     let resultRequest = {
         url: url

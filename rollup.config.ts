@@ -84,7 +84,7 @@ const config: RollupOptions[] = [{
     // This is also where we do all of our source transformations using the plugins.
     input: ['src/index.ts', 'src/source/worker.ts'],
     output: {
-        dir: 'rollup/build/' + nameSpace + 'gl',
+        dir: 'staging/' + nameSpace + 'gl',
         format: 'amd',
         sourcemap: 'inline',
         indent: false,
@@ -97,14 +97,14 @@ const config: RollupOptions[] = [{
     // Next, bundle together the three "chunks" produced in the previous pass
     // into a single, final bundle. See rollup/bundle_prelude.js and
     // rollup/maplibregl.js for details.
-    input: 'rollup/' + nameSpace + 'gl.js',
+    input: 'build/rollup/' + nameSpace + 'gl.js',
     output: {
         name: nameSpace + 'gl', // 生成命名空间名称
         file: outputFile,
         format: 'umd',
         sourcemap: true,
         indent: false,
-        intro: fs.readFileSync('./rollup/bundle_prelude_' + nameSpace + 'gl.js', 'utf8'),
+        intro: fs.readFileSync('./build/rollup/bundle_prelude_' + nameSpace + 'gl.js', 'utf8'),
         banner: fileBanner
     },
     treeshake: false,

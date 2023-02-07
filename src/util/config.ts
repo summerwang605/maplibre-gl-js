@@ -80,11 +80,11 @@ const config: Config = {
             return this.TRAFFIC_SOURCE;
         }
         const source = {
-            "raster": {
-                "tiles": [`${this.API_URL}/tile/r/amaptraffic?t={z}-{x}-{y}`],
-                "tileSize": "256",
-                "type": "raster"
-            }, "vector": {"tiles": [`${this.API_URL}/tile/v/amaptraffic/{z}/{x}/{y}`], "type": "vector"}
+            'raster': {
+                'tiles': [`${this.API_URL}/tile/r/amaptraffic?t={z}-{x}-{y}`],
+                'tileSize': 256,
+                'type': 'raster'
+            }, 'vector': {'tiles': [`${this.API_URL}/tile/v/amaptraffic/{z}/{x}/{y}`], 'type': 'vector'}
         };
         return source;
     },

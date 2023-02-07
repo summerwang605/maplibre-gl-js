@@ -1,11 +1,10 @@
-import {IResourceType} from './ajax';
+import {ResourceType} from '../util/request_manager';
 import config from '../util/config';
 
 import type {RequestParameters} from './ajax';
 import {isMapboxURL} from './request/request_transform_mapabc_msp';
 
-type ResourceTypeEnum = keyof IResourceType;
-export type RequestTransformFunction = (url: string, resourceType?: ResourceTypeEnum) => RequestParameters;
+export type RequestTransformFunction = (url: string, resourceType?: ResourceType) => RequestParameters;
 
 type UrlObject = {
     protocol: string;
@@ -23,7 +22,7 @@ export class RequestManager {
         this._customAccessToken = accessToken;
     }
 
-    transformRequest(url: string, type: ResourceTypeEnum) {
+    transformRequest(url: string, type: ResourceType) {
         if (this._transformRequestFn) {
             return this._transformRequestFn(url, type) || {url};
         }
