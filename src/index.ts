@@ -179,7 +179,7 @@ const exported = {
      * maplibregl.clearStorage();
      */
     clearStorage(callback?: (err?: Error | null) => void) {
-        clearTileCache(callback);
+     //   clearTileCache(callback);
     },
 
     workerUrl: '',
