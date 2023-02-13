@@ -17,8 +17,9 @@ type Config = {
     TRAFFIC_SOURCE: { raster: Object, vector: Object },
     TRAFFIC_SOURCE_: { raster: Object, vector: Object },
     MAX_PARALLEL_IMAGE_REQUESTS: number;
-    REGISTERED_PROTOCOLS: { [x: string]: any };
     MAX_PARALLEL_IMAGE_REQUESTS_PER_FRAME: number;
+    REGISTERED_PROTOCOLS: { [x: string]: any };
+    WORKER_URL: string;
 };
 let mapboxHTTPURLRegex;
 const config: Config = {
@@ -104,7 +105,8 @@ const config: Config = {
     RASTER_URL_PREFIX: 'raster/v1',
     REQUIRE_ACCESS_TOKEN: true,
     ACCESS_TOKEN: null,
-    TRAFFIC_SOURCE: null
-};
+    TRAFFIC_SOURCE: null,
+    WORKER_URL: ''
+}
 
 export default config;
