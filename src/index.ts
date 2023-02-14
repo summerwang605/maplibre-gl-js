@@ -182,8 +182,6 @@ const exported = {
      //   clearTileCache(callback);
     },
 
-    workerUrl: '',
-
     get workerUrl(): string {
         return config.WORKER_URL;
     },
