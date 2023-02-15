@@ -90,6 +90,10 @@ const config: RollupOptions[] = [{
         indent: false,
         chunkFileNames: 'shared.js'
     },
+    onwarn: (message) => {
+        console.error(message);
+        throw message;
+    },
     treeshake: production,
     //acornInjectPlugins: [importAssertions],
     plugins: pluginsForRollup
