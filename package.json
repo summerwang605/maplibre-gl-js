@@ -142,13 +142,8 @@
     "generate-style-code": "ts-node build/generate-style-code.ts",
     "generate-typings": "ts-node build/generate-typings.ts",
     "start-debug": "run-p watch-css watch-dev start-server",
-    "start-debug-mapabc": "run-p watch-css-mapabc watch-dev-mapabc start-server",
-    "watch-dev-mapabc": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,MAPABC:true --watch",
-    "build-prod-mapabc": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:production,MAPABC:true",
-    "build-css-mapabc": "postcss -o dist/mapabc-gl.css src/css/mapabc-gl.css",
     "build-style-spec": "rollup --configPlugin @rollup/plugin-typescript -c rollup.config.style-spec.ts --bundleConfigAsCjs && rollup --configPlugin @rollup/plugin-typescript -c rollup.config.style-spec.ts --environment esm --bundleConfigAsCjs",
     "watch-css": "postcss --watch -o dist/maplibre-gl.css src/css/maplibre-gl.css",
-    "watch-css-mapabc": "postcss --watch -o dist/mapabc-gl.css src/css/mapabc-gl.css",
     "build-dist": "run-p --print-label generate-typings build-dev build-prod build-csp build-csp-dev build-css",
     "build-dev": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev",
     "watch-dev": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev --watch",
@@ -161,7 +156,6 @@
     "watch-benchmarks": "rollup --configPlugin @rollup/plugin-typescript -c test/bench/rollup_config_benchmarks.ts --watch",
     "start-server": "st --no-cache -H 0.0.0.0 --port 9966 .",
     "start": "run-p watch-css watch-dev start-server",
-    "start-mapabc": "run-p watch-css-mapabc watch-dev-mapabc start-server",
     "start-bench": "run-p watch-css watch-benchmarks start-server",
     "lint": "eslint --cache --ext .ts,.tsx,.js,.html --ignore-path .gitignore .",
     "lint-docs": "documentation lint src/index.ts",
@@ -178,7 +172,29 @@
     "benchmark": "ts-node test/bench/run-benchmarks.ts",
     "gl-stats": "ts-node test/bench/gl-stats.ts",
     "prepare": "npm run generate-dist-package && npm run codegen",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+
+    "watch-css-mapabc": "postcss --watch -o dist/mapabc-gl.css src/css/mapabc-gl.css",
+    "watch-dev-mapabc": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,MAPABC:true --watch",
+    "start-mapabc": "run-p watch-css-mapabc watch-dev-mapabc start-server",
+    "build-prod-mapabc": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:production,MAPABC:true",
+    "build-css-mapabc": "postcss -o dist/mapabc-gl.css src/css/mapabc-gl.css",
+    "start-debug-mapabc": "run-p watch-css-mapabc watch-dev-mapabc start-server",
+
+    "watch-css-topsmap": "postcss --watch -o dist/topsmap-gl.css src/css/topsmap-gl.css",
+    "watch-dev-topsmap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,topsmap:true --watch",
+    "start-topsmap": "run-p watch-css-topsmap watch-dev-topsmap start-server",
+    "build-prod-topsmap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:production,topsmap:true",
+    "build-css-topsmap": "postcss -o dist/topsmap-gl.css src/css/topsmap-gl.css",
+    "start-debug-topsmap": "run-p watch-css-topsmap watch-dev-topsmap start-server",
+
+    "watch-css-amap": "postcss --watch -o dist/amap-gl.css src/css/amap-gl.css",
+    "watch-dev-amap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,amap:true --watch",
+    "start-amap": "run-p watch-css-amap watch-dev-amap start-server",
+    "build-prod-amap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:production,amap:true",
+    "build-css-amap": "postcss -o dist/amap-gl.css src/css/amap-gl.css",
+    "start-debug-amap": "run-p watch-css-amap watch-dev-amap start-server"
+
   },
   "files": [
     "build/",
