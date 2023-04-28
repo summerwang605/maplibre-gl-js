@@ -95,7 +95,7 @@
     }
   },
   "name": "标准版（有图标、高精度）",
-  "sprite": "mapabc://sprites/mapabcgd",
+  "sprite": "amap://sprites/mapabcgd",
   "layers": [
     {
       "filter": [
@@ -36178,7 +36178,7 @@
       "minzoom": 16
     }
   ],
-  "glyphs": "mapabc://glyphs/{fontstack}/{range}.pbf",
-  "id": "mapabc3.3.1",
+  "glyphs": "amap://glyphs/{fontstack}/{range}.pbf",
+  "id": "amap3.3.1",
   "version": 8
 }

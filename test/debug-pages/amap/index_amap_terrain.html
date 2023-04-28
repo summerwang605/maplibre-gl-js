@@ -83,12 +83,12 @@
 
     map.addControl(new amapgl.ScaleControl({unit: 'metric'}));
     map.addControl(new amapgl.NavigationControl());
-    map.addControl(new mapabcgl.NavControl({
+    map.addControl(new amapgl.NavControl({
         showZoom: true,
         showCompass: true
     }));
     map.addControl(
-        new mapabcgl.TerrainControl({
+        new amapgl.TerrainControl({
             source: 'terrainSource',
             exaggeration: 1
         })
