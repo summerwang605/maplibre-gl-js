@@ -103,6 +103,9 @@ function getReplaceOptionByNameSpace(nameSpace: string) {
             'mapbox-gl': 'amap-gl',
             'mapbox': 'amap',
             'Mapbox': 'Amap',
+            'mapabcgl': 'amapgl',
+            'mapabc': 'amap',
+            'MapAbc': 'Amap',
         }
     } else if (nameSpace == 'topsmap') {
         forReplaceOption = {
@@ -120,6 +123,9 @@ function getReplaceOptionByNameSpace(nameSpace: string) {
             'mapbox-gl': 'topsmap-gl',
             'mapbox': 'topsmap',
             'Mapbox': 'Topsmap',
+            'mapabcgl': 'topsmapgl',
+            'mapabc': 'topsmap',
+            'MapAbc': 'Topsmap',
         }
     } else {
         forReplaceOption = {}
