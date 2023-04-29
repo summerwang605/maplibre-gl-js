@@ -94,7 +94,7 @@ function getReplaceOptionByNameSpace(nameSpace: string) {
             'https://www.maplibre.org': 'https://www.amap.com',
             '.maplibre.org': '.amap.com',
             'maplibre.org': 'amap.com',
-            'maplibregl': 'amap',
+            'maplibregl': 'amapgl',
             'maplibre-gl': 'amap-gl',
             'MapLibre': 'Amap',
             'maplibre': 'amap',
