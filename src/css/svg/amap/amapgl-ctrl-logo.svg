@@ -1,14 +1,13 @@
 <svg  version="1.0"
      xmlns="http://www.w3.org/2000/svg"
-     xmlns:xlink="http://www.w3.org/1999/xlink" width="340" height="250" viewBox="0 0 340.000000 250.000000"
-    fill="none">
-    <g  fill="#004f9d" class="iconlinesvg-g iconlinesvg" transform="translate(69.68702697753906,92.4072904586792)">
-        <g class="tp-name">
+     xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="100%" viewBox="0 0 340.000000 250.000000" >
+    <g  fill="#004f9d" transform="translate(69.68702697753906,92.4072904586792)">
+        <g >
             <g transform="translate(0, 1.9459580665281955)">
                 <g>
-                    <g class="imagesvg">
+                    <g >
                         <g>
-                            <rect fill="#004f9d" fill-opacity="0" stroke-width="2" x="0" y="0" width="75.6586977469818" height="59.351327110186865" class="image-rect"></rect>
+                            <rect fill="#004f9d" fill-opacity="0" stroke-width="2" x="0" y="0" width="75.6586977469818" height="59.351327110186865" ></rect>
                             <svg x="0" y="0" width="75.6586977469818" height="59.351327110186865" class="image-svg-svg primary" style="overflow: visible;">
                                 <svg
                                         xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1531.699951171875 1201.56005859375">
