@@ -17,7 +17,7 @@ import config from '../config';
  *     collectResourceTiming?: boolean;
  * }
  */
-const mapAbcMspTransformRequestFunc: RequestTransformFunction = (url: string, resourceType?: ResourceType) => {
+const mspTransformRequestFunc: RequestTransformFunction = (url: string, resourceType?: ResourceType) => {
     //console.log('private protocol url =>' ,url, resourceType)
     let resultRequest = {
         url: url
@@ -123,4 +123,4 @@ function hasCacheDefeatingSku(url: string) {
     return url.indexOf('sku=') > 0 && isMapboxHTTPURL(url);
 }
 
-export {isMapboxURL, isHttpURL, isMapboxHTTPURL, hasCacheDefeatingSku, mapAbcMspTransformRequestFunc};
+export {isMapboxURL, isHttpURL, isMapboxHTTPURL, hasCacheDefeatingSku, mspTransformRequestFunc};
