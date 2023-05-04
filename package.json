@@ -13,6 +13,7 @@
   "types": "dist/maplibre-gl.d.ts",
   "type": "module",
   "dependencies": {
+    "@mapbox/mapbox-gl-supported": "^2.0.1",
     "@mapbox/geojson-rewind": "^0.5.2",
     "@mapbox/jsonlint-lines-primitives": "^2.0.2",
     "@mapbox/point-geometry": "^0.1.0",
@@ -173,28 +174,30 @@
     "gl-stats": "ts-node test/bench/gl-stats.ts",
     "prepare": "npm run generate-dist-package && npm run codegen",
     "typecheck": "tsc --noEmit",
-
     "watch-css-mapabc": "postcss --watch -o dist/mapabc-gl.css src/css/mapabc-gl.css",
     "watch-dev-mapabc": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,MAPABC:true,EXPORTNAMESPACE:mapabc --watch",
     "start-mapabc": "run-p watch-css-mapabc watch-dev-mapabc start-server",
     "build-prod-mapabc": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:production,MAPABC:true,EXPORTNAMESPACE:mapabc",
     "build-css-mapabc": "postcss -o dist/mapabc-gl.css src/css/mapabc-gl.css",
     "start-debug-mapabc": "run-p watch-css-mapabc watch-dev-mapabc start-server",
-
+    "build-dev-mapabc": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,EXPORTNAMESPACE:mapabc",
+    "build-dist-mapabc": "run-p --print-label generate-typings build-dev-mapabc build-prod-mapabc build-css-mapabc",
     "watch-css-topsmap": "postcss --watch -o dist/topsmap-gl.css src/css/topsmap-gl.css",
     "watch-dev-topsmap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,topsmap:true,EXPORTNAMESPACE:topsmap --watch",
     "start-topsmap": "run-p watch-css-topsmap watch-dev-topsmap start-server",
     "build-prod-topsmap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:production,topsmap:true,EXPORTNAMESPACE:topsmap",
     "build-css-topsmap": "postcss -o dist/topsmap-gl.css src/css/topsmap-gl.css",
     "start-debug-topsmap": "run-p watch-css-topsmap watch-dev-topsmap start-server",
-
+    "build-dev-topsmap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,EXPORTNAMESPACE:topsmap",
+    "build-dist-topsmap": "run-p --print-label generate-typings build-dev-topsmap build-prod-topsmap build-css-topsmap",
     "watch-css-amap": "postcss --watch -o dist/amap-gl.css src/css/amap-gl.css",
     "watch-dev-amap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,amap:true,EXPORTNAMESPACE:amap --watch",
     "start-amap": "run-p watch-css-amap watch-dev-amap start-server",
     "build-prod-amap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:production,amap:true,EXPORTNAMESPACE:amap",
     "build-css-amap": "postcss -o dist/amap-gl.css src/css/amap-gl.css",
-    "start-debug-amap": "run-p watch-css-amap watch-dev-amap start-server"
-
+    "start-debug-amap": "run-p watch-css-amap watch-dev-amap start-server",
+    "build-dev-amap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,EXPORTNAMESPACE:amap",
+    "build-dist-amap": "run-p --print-label generate-typings build-dev-amap build-prod-amap build-css-amap"
   },
   "files": [
     "build/",
