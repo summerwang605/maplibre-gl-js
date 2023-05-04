@@ -3193,7 +3193,7 @@ class Map extends Camera {
      * @private
      */
     _update(updateStyle?: boolean) {
-        if (!this.style) return this;
+        if (!this.style || !this.style._loaded) return this;
 
         this._styleDirty = this._styleDirty || updateStyle;
         this._sourcesDirty = true;
