@@ -14,6 +14,7 @@ import Style from './style/style';
 import LngLat from './geo/lng_lat';
 import LngLatBounds from './geo/lng_lat_bounds';
 import Point from '@mapbox/point-geometry';
+import {supported} from '@mapbox/mapbox-gl-supported';
 import MercatorCoordinate from './geo/mercator_coordinate';
 import {Evented} from './util/evented';
 import config from './util/config';
@@ -39,6 +40,7 @@ const version = packageJSON.version;
 export type * from '@maplibre/maplibre-gl-style-spec';
 
 const exported = {
+    supported,
     setRTLTextPlugin,
     getRTLTextPluginStatus,
     Map,

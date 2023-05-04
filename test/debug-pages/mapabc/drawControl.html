@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>地图API－范例－绘制控件</title>
+    <meta charset="UTF-8" />
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="http://13.75.103.188:35001/mapdemo/apidemos/sourceLinks/css/style.css">
+    <script type="text/javascript" src="http://13.75.103.188:35001/webglapi/lib?n=mapabc-gl-api-min&v=1.21.12.14&ak=ec85d3648154874552835438ac6a02b2"></script>
+    <script type="text/javascript" src="http://13.75.103.188:35001/webglapi/lib?n=mapabc-gl-draw&v=1.1.0-dev&ak=ec85d3648154874552835438ac6a02b2"></script>
+    <style>
+        .drawmap_tip {
+            position: absolute;
+            top: 15px;
+            right: 55px;
+            color: #ffae00;
+            font-size: 12px;
+        }
+        .contro_panel_height{
+            display: none;
+            left:20px;
+            right:20px;
+            overflow-y:auto;
+            bottom: 30px;
+            top: auto;
+            width: auto;
+            max-height: 200px;
+            min-height: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map" class="map-container"></div>
+    <div class="drawmap_tip"><span>点击右侧按钮在地图上自定义绘制点线面，双击完成</span></div>
+    <div id="pannel" class="contro_panel contro_panel_position_lr contro_panel_height">
+    </div>
+    <div id="pannel_1" class="control_panel " style="left: 20px;top: 20px;">
+        <span class="text"><input id="dbZoom" type="checkbox" name="">禁止捕捉</span>
+    </div>
+    <script type="text/javascript">
+    mapabcgl.accessToken = 'ec85d3648154874552835438ac6a02b2';
+    var map = new mapabcgl.Map({
+        container: 'map',
+        style: 'mapabc://style/mapabc80',
+        zoom: 10,
+        maxZoom: 23,
+        minZoom: 3,
+        center: [119.4170285, 39.8491583]
+    });
+    const {
+        SnapPointMode,
+        SnapPolygonMode,
+        SnapLineMode,
+        SnapModeDrawStyles,
+    } = mapboxGlDrawSnapMode;
+
+    const styles = [
+        // ACTIVE (being drawn)
+        // line stroke
+        {
+            "id": "gl-draw-line",
+            "type": "line",
+            "filter": ["all", ["==", "$type", "LineString"],
+                ["!=", "mode", "static"]
+            ],
+            "layout": {
+                "line-cap": "round",
+                "line-join": "round"
+            },
+            "paint": {
+                "line-color": "#D20C0C",
+                "line-dasharray": [0.2, 2],
+                "line-width": 2
+            }
+        },
+        // polygon fill
+        {
+            "id": "gl-draw-polygon-fill",
+            "type": "fill",
+            "filter": ["all", ["==", "$type", "Polygon"],
+                ["!=", "mode", "static"]
+            ],
+            "paint": {
+                "fill-color": "#D20C0C",
+                "fill-outline-color": "#D20C0C",
+                "fill-opacity": 0.1
+            }
+        },
+        // polygon outline stroke
+        // This doesn't style the first edge of the polygon, which uses the line stroke styling instead
+        {
+            "id": "gl-draw-polygon-stroke-active",
+            "type": "line",
+            "filter": ["all", ["==", "$type", "Polygon"],
+                ["!=", "mode", "static"]
+            ],
+            "layout": {
+                "line-cap": "round",
+                "line-join": "round"
+            },
+            "paint": {
+                "line-color": "#D20C0C",
+                "line-dasharray": [0.2, 2],
+                "line-width": 2
+            }
+        },
+        // vertex point halos
+        {
+            "id": "gl-draw-polygon-and-line-vertex-halo-active",
+            "type": "circle",
+            "filter": ["all", ["==", "meta", "vertex"],
+                ["==", "$type", "Point"],
+                ["!=", "mode", "static"]
+            ],
+            "paint": {
+                "circle-radius": 5,
+                "circle-color": "#FFF"
+            }
+        },
+        // vertex points
+        {
+            "id": "gl-draw-polygon-and-line-vertex-active",
+            "type": "circle",
+            "filter": ["all", ["==", "meta", "vertex"],
+                ["==", "$type", "Point"],
+                ["!=", "mode", "static"]
+            ],
+            "paint": {
+                "circle-radius": 3,
+                "circle-color": "#D20C0C",
+            }
+        },
+
+        // INACTIVE (static, already drawn)
+        // line stroke
+        {
+            "id": "gl-draw-line-static",
+            "type": "line",
+            "filter": ["all", ["==", "$type", "LineString"],
+                ["==", "mode", "static"]
+            ],
+            "layout": {
+                "line-cap": "round",
+                "line-join": "round"
+            },
+            "paint": {
+                "line-color": "#000",
+                "line-width": 3
+            }
+        },
+        // polygon fill
+        {
+            "id": "gl-draw-polygon-fill-static",
+            "type": "fill",
+            "filter": ["all", ["==", "$type", "Polygon"],
+                ["==", "mode", "static"]
+            ],
+            "paint": {
+                "fill-color": "#000",
+                "fill-outline-color": "#000",
+                "fill-opacity": 0.1
+            }
+        },
+        // polygon outline
+        {
+            "id": "gl-draw-polygon-stroke-static",
+            "type": "line",
+            "filter": ["all", ["==", "$type", "Polygon"],
+                ["==", "mode", "static"]
+            ],
+            "layout": {
+                "line-cap": "round",
+                "line-join": "round"
+            },
+            "paint": {
+                "line-color": "#000",
+                "line-width": 3
+            }
+        }
+    ];
+    const draw = new mapabcgl.Draw({
+
+        modes: {
+            ...mapabcgl.Draw.modes,
+
+            draw_polygon: SnapPolygonMode,
+            draw_line_string: SnapLineMode,
+
+        },
+        controls: {
+            point: true,
+            combine_features: true,
+            uncombine_features: true
+        },
+        styles: SnapModeDrawStyles, //默认绘制样式，也可自定义样式，详情看上方styles定义
+        userProperties: true,
+        snap: true,
+        snapOptions: {
+            snapPx: 15,
+            snapToMidPoints: true,
+        },
+        guides: false,
+    });
+
+    map.on('load', function(e) {
+        map.addControl(draw);
+    });
+
+
+    map.on('draw.create', updateArea);
+    map.on('draw.delete', updateArea);
+    map.on('draw.update', updateArea);
+
+
+    function updateArea(e) {
+        var data = draw.getAll();
+
+        var pannel = document.getElementById('pannel');
+        if (data.features.length > 0) {
+            pannel.style.display = 'block';
+            pannel.innerHTML = JSON.stringify(data);
+
+        } else {
+            pannel.style.display = 'none';
+            pannel.innerHTML = JSON.stringify(data);
+
+        };
+
+    }
+    document.getElementById('dbZoom').onclick = function() {
+
+        this.checked ? draw.options.snap = false : draw.options.snap = true
+    }
+    </script>
+</body>
+
+</html>
