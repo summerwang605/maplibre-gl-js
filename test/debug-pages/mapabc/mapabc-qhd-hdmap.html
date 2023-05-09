@@ -1,0 +1,318 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>地图API－范例－绘制控件</title>
+  <meta charset="UTF-8" />
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <link rel="stylesheet" type="text/css" href="http://13.75.103.188:35001/mapdemo/apidemos/sourceLinks/css/style.css">
+  <script type="text/javascript" src="http://13.75.103.188:35001/webglapi/lib?n=mapabc-gl-api-min&v=1.21.12.14&ak=ec85d3648154874552835438ac6a02b2"></script>
+  <script type="text/javascript" src="http://13.75.103.188:35001/webglapi/lib?n=mapabc-gl-draw&v=1.1.0-dev&ak=ec85d3648154874552835438ac6a02b2"></script>
+  <style>
+    .drawmap_tip {
+      position: absolute;
+      top: 15px;
+      right: 55px;
+      color: #ffae00;
+      font-size: 12px;
+    }
+    .contro_panel_height{
+      display: block;
+      left:20px;
+      right:20px;
+      overflow-y:auto;
+      bottom: 30px;
+      top: auto;
+      width: auto;
+      max-height: 200px;
+      min-height: 0;
+    }
+  </style>
+</head>
+
+<body>
+<div id="map" class="map-container"></div>
+
+<div id="pannel" class="control_panel position_lb" style="width: 800px;">
+  <li>
+    <span>经纬度定位</span>
+    <input type="text" id="location" placeholder="" style="width:200px" />
+    <input type="button" value="定位" style="width:80px" onclick="goTo()"/>
+  </li>
+  <li>
+    <textarea id="coords" rows="10" cols="60" ></textarea>
+  </li>
+</div>
+
+<div class="drawmap_tip"><span>点击右侧按钮在地图上自定义绘制点线面，双击完成</span></div>
+
+<div id="pannel_1" class="control_panel " style="left: 20px;top: 20px; display:none;">
+  <span class="text"><input id="dbZoom" type="checkbox" name="">禁止捕捉</span>
+</div>
+<script type="text/javascript">
+  mapabcgl.accessToken = 'ec85d3648154874552835438ac6a02b2';
+  var map = new mapabcgl.Map({
+    container: 'map',
+    style: 'mapabc://style/mapabc80',
+    zoom: 17,
+    maxZoom: 23,
+    minZoom: 3,
+    center: [119.41872818886361,39.827159993604994]
+  });
+  const {
+
+    SnapPolygonMode,
+    SnapLineMode,
+    SnapModeDrawStyles,
+  } = mapboxGlDrawSnapMode;
+
+  const styles = [
+    // ACTIVE (being drawn)
+    // line stroke
+    {
+      "id": "gl-draw-line",
+      "type": "line",
+      "filter": ["all", ["==", "$type", "LineString"],
+        ["!=", "mode", "static"]
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#D20C0C",
+        "line-dasharray": [0.2, 2],
+        "line-width": 2
+      }
+    },
+    // polygon fill
+    {
+      "id": "gl-draw-polygon-fill",
+      "type": "fill",
+      "filter": ["all", ["==", "$type", "Polygon"],
+        ["!=", "mode", "static"]
+      ],
+      "paint": {
+        "fill-color": "#D20C0C",
+        "fill-outline-color": "#D20C0C",
+        "fill-opacity": 0.1
+      }
+    },
+    // polygon outline stroke
+    // This doesn't style the first edge of the polygon, which uses the line stroke styling instead
+    {
+      "id": "gl-draw-polygon-stroke-active",
+      "type": "line",
+      "filter": ["all", ["==", "$type", "Polygon"],
+        ["!=", "mode", "static"]
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#D20C0C",
+        "line-dasharray": [0.2, 2],
+        "line-width": 2
+      }
+    },
+    // vertex point halos
+    {
+      "id": "gl-draw-polygon-and-line-vertex-halo-active",
+      "type": "circle",
+      "filter": ["all", ["==", "meta", "vertex"],
+        ["==", "$type", "Point"],
+        ["!=", "mode", "static"]
+      ],
+      "paint": {
+        "circle-radius": 5,
+        "circle-color": "#FFF"
+      }
+    },
+    // vertex points
+    {
+      "id": "gl-draw-polygon-and-line-vertex-active",
+      "type": "circle",
+      "filter": ["all", ["==", "meta", "vertex"],
+        ["==", "$type", "Point"],
+        ["!=", "mode", "static"]
+      ],
+      "paint": {
+        "circle-radius": 3,
+        "circle-color": "#D20C0C",
+      }
+    },
+
+    // INACTIVE (static, already drawn)
+    // line stroke
+    {
+      "id": "gl-draw-line-static",
+      "type": "line",
+      "filter": ["all", ["==", "$type", "LineString"],
+        ["==", "mode", "static"]
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#000",
+        "line-width": 3
+      }
+    },
+    // polygon fill
+    {
+      "id": "gl-draw-polygon-fill-static",
+      "type": "fill",
+      "filter": ["all", ["==", "$type", "Polygon"],
+        ["==", "mode", "static"]
+      ],
+      "paint": {
+        "fill-color": "#000",
+        "fill-outline-color": "#000",
+        "fill-opacity": 0.1
+      }
+    },
+    // polygon outline
+    {
+      "id": "gl-draw-polygon-stroke-static",
+      "type": "line",
+      "filter": ["all", ["==", "$type", "Polygon"],
+        ["==", "mode", "static"]
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#000",
+        "line-width": 3
+      }
+    }
+  ];
+  const draw = new mapabcgl.Draw({
+
+    modes: {
+      ...mapabcgl.Draw.modes,
+
+      draw_polygon: SnapPolygonMode,
+      draw_line_string: SnapLineMode,
+
+    },
+    controls: {
+      point: false,
+      combine_features: false,
+      uncombine_features: false
+    },
+    styles: SnapModeDrawStyles, //默认绘制样式，也可自定义样式，详情看上方styles定义
+    userProperties: true,
+    snap: true,
+    snapOptions: {
+      snapPx: 15,
+      snapToMidPoints: true,
+    },
+    guides: false,
+  });
+
+  map.on('load', function(e) {
+
+
+
+    var trafficLayerStyle = {
+      "id": 'traffic-raster',
+      "type": "raster",
+      "source": {
+        "type": "raster",
+        "minzoom": 19,
+        "maxzoom": 21,
+        "tiles":["http://13.75.103.156/service/tile?SERVICE=raster&REQUEST=GETTILE&LAYER=qx&VERSION=1.0.0&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}&FORMAT=image/png"],
+        "tileSize":256
+      }
+    }
+
+    //map.addLayer(trafficLayerStyle);
+
+
+    map.addControl(draw);
+  });
+
+
+  map.on('draw.create', updateArea);
+  map.on('draw.delete', updateArea);
+  map.on('draw.update', updateArea);
+
+
+  function updateArea(e) {
+    var data = draw.getAll();
+
+    var coords = document.getElementById('coords');
+    if (data.features.length > 0) {
+      coords.style.display = 'block';
+      coords.value = JSON.stringify(data);
+
+    } else {
+      coords.style.display = 'none';
+      coords.value = JSON.stringify(data);
+    };
+
+  }
+  document.getElementById('dbZoom').onclick = function() {
+    this.checked ? draw.options.snap = false : draw.options.snap = true
+  }
+  function goTo(){
+    let location = document.getElementById('location').value;
+
+    console.log(location);
+
+    if(location == null){
+      return;
+    }
+
+    if(location.split(",").length != 2){
+      return;
+    }
+    remoreMarker();
+    addMarker(location);
+  }
+
+  function remoreMarker(){
+    map.removeLayerAndSource('point');
+  };
+  function addMarker(location){
+    let coords = location.split(",");
+    // Add a source and layer displaying a point which will be animated in a circle.
+    map.addSource('point', {
+      "type": "geojson",
+      "data": getData(coords)
+    });
+
+    map.addLayer({
+      "id": "point",
+      "source": "point",
+      "type": "circle",
+      "paint": {
+        "circle-radius": 10,
+        "circle-color": "#ff0000"
+      }
+    });
+
+    map.flyTo({
+      center: coords,
+      essential: true // this animation is considered essential with respect to prefers-reduced-motion
+    });
+  }
+
+
+  function getData(coordinates){
+    return {
+      "type": "Point",
+      "coordinates": coordinates
+    }
+  }
+</script>
+</body>
+
+</html>

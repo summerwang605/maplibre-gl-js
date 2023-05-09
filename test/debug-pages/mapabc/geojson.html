@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>地图API－范例－GeoJSON源添加多条线</title>
+    <meta charset="UTF-8"/>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="http://13.75.103.188:35001/mapdemo/apidemos/sourceLinks/css/style.css">
+    <script type="text/javascript"
+            src="http://13.75.103.188:35001/webglapi/lib?n=mapabc-gl-api-min&v=1.21.12.14&ak=ec85d3648154874552835438ac6a02b2"></script>
+</head>
+<style>
+    .position_lb {
+        align-items: center;
+        align-content: flex-start;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+</style>
+<body>
+<div id="map" class="map-container"></div>
+<div id="pannel" class="control_panel position_lb">
+    <span class="button" onclick="drawArea()">添加</span>
+    <span class="button" onclick="removeArea()">移除</span>
+    <br>
+    <li>
+        <textarea id="coords" rows="30" cols="60"></textarea>
+    </li>
+
+    <li>
+        <span>根据geojson叠加线</span>
+        <input type="button" value="添加线" style="width:80px" onclick="addGeoJson()"/>
+    </li>
+</div>
+<script type="text/javascript">
+    mapabcgl.accessToken = 'ec85d3648154874552835438ac6a02b2';
+    var map = new mapabcgl.Map({
+        container: 'map',
+        style: 'mapabc://style/mapabc80',
+        zoom: 10,
+        maxZoom: 23,
+        minZoom: 3,
+        center: [119.4170285, 39.8491583]
+    });
+    map.addControl(new mapabcgl.NavigationControl());
+
+    function addGeoJson() {
+        removeArea();
+        let geodata = document.getElementById("coords").value;
+        if (isJSONString(geodata)) {
+            let geojson = JSON.parse(geodata);
+            addLineByGeojson(geojson);
+        } else {
+            alert("geojson 格式不正常");
+        }
+    };
+
+    function isJSONString(str) {
+        try {
+            JSON.parse(str);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function addLineByGeojson(json) {
+        map.addSource("geojson-line", {
+            "type": "geojson",
+            "data": json
+        });
+
+        //添加多条线
+        map.addLayer({
+            "id": "geojson-line",
+            "type": "line",
+            "source": "geojson-line",
+            "paint": {
+                "line-color": [
+                    "step",
+                    ["get", "state"],
+                    "#00ff00",
+                    1,
+                    "#00ff00",
+                    2,
+                    "#FFFF00",
+                    3,
+                    "#DC143C",
+                    4,
+                    "#8B0000",
+                ],
+                "line-width": 5
+            }
+        });
+
+    }
+
+    function drawArea() {
+        removeArea();
+
+        map.addSource("geojson-line", {
+            "type": "geojson",
+            "data": {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.491868,
+                                    39.822832
+                                ],
+                                [
+                                    119.49210783476896,
+                                    39.822925331926605
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 38,
+                            "speed": 38.0,
+                            "start": 15,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49210783476896,
+                                    39.822925331926605
+                                ],
+                                [
+                                    119.49228510394104,
+                                    39.822994316392155
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 55,
+                            "speed": 38.0,
+                            "start": 38,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49228510394104,
+                                    39.822994316392155
+                                ],
+                                [
+                                    119.492292,
+                                    39.822997
+                                ],
+                                [
+                                    119.492292,
+                                    39.822997
+                                ],
+                                [
+                                    119.49257,
+                                    39.823116
+                                ],
+                                [
+                                    119.49341783300127,
+                                    39.82348069140352
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 167,
+                            "speed": 42.0,
+                            "start": 55,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49341783300127,
+                                    39.82348069140352
+                                ],
+                                [
+                                    119.49359240836141,
+                                    39.82355364827044
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 183,
+                            "speed": 42.0,
+                            "start": 167,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49359240836141,
+                                    39.82355364827044
+                                ],
+                                [
+                                    119.49361,
+                                    39.823561
+                                ],
+                                [
+                                    119.49382764928299,
+                                    39.82365369298876
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 206,
+                            "speed": 43.0,
+                            "start": 183,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.494146,
+                                    39.823789
+                                ],
+                                [
+                                    119.494649,
+                                    39.824003
+                                ],
+                                [
+                                    119.49519274849376,
+                                    39.82424617115326
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 333,
+                            "speed": 45.0,
+                            "start": 230,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49519274849376,
+                                    39.82424617115326
+                                ],
+                                [
+                                    119.49530187902049,
+                                    39.824298462863986
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 344,
+                            "speed": 45.0,
+                            "start": 333,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49530187902049,
+                                    39.824298462863986
+                                ],
+                                [
+                                    119.495303,
+                                    39.824299
+                                ],
+                                [
+                                    119.495303,
+                                    39.824299
+                                ],
+                                [
+                                    119.49570216164805,
+                                    39.82451710901902
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 386,
+                            "speed": 47.0,
+                            "start": 344,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49570216164805,
+                                    39.82451710901902
+                                ],
+                                [
+                                    119.49594454483456,
+                                    39.82465819773952
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 413,
+                            "speed": 42.85277777777778,
+                            "start": 386,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49594454483456,
+                                    39.82465819773952
+                                ],
+                                [
+                                    119.496049,
+                                    39.824719
+                                ],
+                                [
+                                    119.496049,
+                                    39.824719
+                                ],
+                                [
+                                    119.49679032136696,
+                                    39.8251545533524
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 503,
+                            "speed": 42.85277777777778,
+                            "start": 413,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49679032136696,
+                                    39.8251545533524
+                                ],
+                                [
+                                    119.4968656032532,
+                                    39.825197238958
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 511,
+                            "speed": 47.0,
+                            "start": 503,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.4968656032532,
+                                    39.825197238958
+                                ],
+                                [
+                                    119.4971054010923,
+                                    39.82532561529449
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 537,
+                            "speed": 47.0,
+                            "start": 511,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.4971054010923,
+                                    39.82532561529449
+                                ],
+                                [
+                                    119.4971443585631,
+                                    39.825345504108526
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 540,
+                            "speed": 47.0,
+                            "start": 537,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.4971443585631,
+                                    39.825345504108526
+                                ],
+                                [
+                                    119.497161,
+                                    39.825354
+                                ],
+                                [
+                                    119.497219,
+                                    39.825378
+                                ],
+                                [
+                                    119.49724568958824,
+                                    39.82539019590456
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 551,
+                            "speed": 48.0,
+                            "start": 540,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49724568958824,
+                                    39.82539019590456
+                                ],
+                                [
+                                    119.49746023048915,
+                                    39.82548163824465
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 572,
+                            "speed": 48.0,
+                            "start": 551,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49746023048915,
+                                    39.82548163824465
+                                ],
+                                [
+                                    119.49768330346336,
+                                    39.8255599698323
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 593,
+                            "speed": 48.0,
+                            "start": 572,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49768330346336,
+                                    39.8255599698323
+                                ],
+                                [
+                                    119.4979693344508,
+                                    39.8256381541192
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 619,
+                            "speed": 48.0,
+                            "start": 593,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.4979693344508,
+                                    39.8256381541192
+                                ],
+                                [
+                                    119.498026,
+                                    39.825652
+                                ],
+                                [
+                                    119.498101,
+                                    39.825668
+                                ],
+                                [
+                                    119.49824087122755,
+                                    39.82569122771288
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 643,
+                            "speed": 48.0,
+                            "start": 619,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49824087122755,
+                                    39.82569122771288
+                                ],
+                                [
+                                    119.4984936145151,
+                                    39.82572626929548
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 665,
+                            "speed": 48.0,
+                            "start": 643,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.4984936145151,
+                                    39.82572626929548
+                                ],
+                                [
+                                    119.4987141217082,
+                                    39.82574475417608
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 684,
+                            "speed": 46.0,
+                            "start": 665,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.4987141217082,
+                                    39.82574475417608
+                                ],
+                                [
+                                    119.49895909504173,
+                                    39.82575112678978
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 705,
+                            "speed": 46.0,
+                            "start": 684,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49895909504173,
+                                    39.82575112678978
+                                ],
+                                [
+                                    119.49944885440522,
+                                    39.82573136544027
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 747,
+                            "speed": 46.0,
+                            "start": 705,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49944885440522,
+                                    39.82573136544027
+                                ],
+                                [
+                                    119.49974007131264,
+                                    39.82571483855012
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 772,
+                            "speed": 46.0,
+                            "start": 747,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.49974007131264,
+                                    39.82571483855012
+                                ],
+                                [
+                                    119.499875,
+                                    39.825705
+                                ],
+                                [
+                                    119.5002173541765,
+                                    39.8256845293379
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 814,
+                            "speed": 46.0,
+                            "start": 772,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.5002173541765,
+                                    39.8256845293379
+                                ],
+                                [
+                                    119.5003105208335,
+                                    39.8256789585481
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 821,
+                            "speed": 46.0,
+                            "start": 814,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.5003105208335,
+                                    39.8256789585481
+                                ],
+                                [
+                                    119.5003105208335,
+                                    39.8256789585481
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 821,
+                            "speed": 89.0,
+                            "start": 821,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.50032216666804,
+                                    39.82567826219923
+                                ],
+                                [
+                                    119.50036,
+                                    39.825676
+                                ],
+                                [
+                                    119.5004851139444,
+                                    39.8256676280632
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 837,
+                            "speed": 46.0,
+                            "start": 822,
+                            "state": 4
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.5004851139444,
+                                    39.8256676280632
+                                ],
+                                [
+                                    119.500629,
+                                    39.825658
+                                ],
+                                [
+                                    119.50083416834313,
+                                    39.82564376866984
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 867,
+                            "speed": 46.0,
+                            "start": 837,
+                            "state": 1
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.50083416834313,
+                                    39.82564376866984
+                                ],
+                                [
+                                    119.500975,
+                                    39.825634
+                                ],
+                                [
+                                    119.500975,
+                                    39.825634
+                                ],
+                                [
+                                    119.50122975861451,
+                                    39.82561669490784
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 900,
+                            "speed": 46.0,
+                            "start": 867,
+                            "state": 3
+                        },
+                        "type": "Feature"
+                    },
+                    {
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    119.50122975861451,
+                                    39.82561669490784
+                                ],
+                                [
+                                    119.50148625400426,
+                                    39.8256047044786
+                                ]
+                            ],
+                            "type": "LineString"
+                        },
+                        "properties": {
+                            "end": 922,
+                            "speed": 47.0,
+                            "start": 900,
+                            "state": 2
+                        },
+                        "type": "Feature"
+                    }
+                ]
+            }
+        });
+        //添加多条线
+        map.addLayer({
+            "id": "geojson-line",
+            "type": "line",
+            "source": "geojson-line",
+            "paint": {
+                "line-color": [
+                    "step",
+                    ["get", "state"],
+                    "#00ff00",
+                    1,
+                    "#00ff00",
+                    2,
+                    "#FFFF00",
+                    3,
+                    "#DC143C",
+                    4,
+                    "#8B0000",
+                ],
+                "line-width": 5
+            }
+        });
+    }
+
+    function removeArea() {
+        map.removeLayerAndSource("geojson-line");
+    }
+</script>
+</body>
+
+</html>
