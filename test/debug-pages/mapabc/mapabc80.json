@@ -65,7 +65,7 @@
     },
     "roadALLsource": {
       "tiles": [
-        "http://13.75.103.188:35003/gs/{z}-{x}-{y}?layer=roadALL\t"
+        "http://13.75.103.188:35003/gs/{z}-{x}-{y}?layer=roadALL"
       ],
       "source_remark": "矢量地图（全路网道路）",
       "mapabc_logo": true,
@@ -85,7 +85,7 @@
     },
     "roadsource": {
       "tiles": [
-        "http://13.75.103.188:35003/gs/{z}-{x}-{y}?layer=road\t"
+        "http://13.75.103.188:35003/gs/{z}-{x}-{y}?layer=road"
       ],
       "source_remark": "矢量地图（道路）\t",
       "mapabc_logo": true,

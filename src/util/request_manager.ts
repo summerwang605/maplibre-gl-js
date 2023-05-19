@@ -16,6 +16,7 @@ export const enum ResourceType {
 }
 
 export type RequestTransformFunction = (url: string, resourceType?: ResourceType) => RequestParameters;
+export type RequestTransformFunctionCustom = (url: string, resourceType?: ResourceType, accessToken?: string | null | void) => RequestParameters;
 
 type UrlObject = {
     protocol: string;
@@ -26,7 +27,7 @@ type UrlObject = {
 
 export class RequestManager {
     _transformRequestFn: RequestTransformFunction;
-    transformRequestFnCustom: RequestTransformFunction;
+    transformRequestFnCustom: RequestTransformFunctionCustom;
     _customAccessToken: string;
 
     constructor(transformRequestFn?: RequestTransformFunction, accessToken?: string) {
@@ -36,14 +37,12 @@ export class RequestManager {
     }
 
     transformRequest(url: string, type: ResourceType) {
-
-        if(this.transformRequestFnCustom){
-            url = this.transformRequestFnCustom(url,type)['url'];
+        if (this.transformRequestFnCustom) {
+            url = this.transformRequestFnCustom(url, type, this._customAccessToken)['url'];
         }
         if (this._transformRequestFn) {
             return this._transformRequestFn(url, type) || {url};
         }
-
         return {url};
     }
 
@@ -110,12 +109,12 @@ function makeAPIURL(urlObj: UrlObject, accessToken?: string | null | void): stri
     return formatUrl(urlObj);
 }
 
-
 /**
  * 处理和转换资源url
  * 适配msp的url转换器
  * @param url
  * @param resourceType
+ * @param accessToken
  * http://121.36.99.212:35001/webglapi/styles?n=mapabc80&addSource=true&sourceType=http&ak=ec85d3648154874552835438ac6a02b2
  * return {
  *     url: string;
@@ -127,7 +126,7 @@ function makeAPIURL(urlObj: UrlObject, accessToken?: string | null | void): stri
  *     collectResourceTiming?: boolean;
  * }
  */
-const mspTransformRequestFunc: RequestTransformFunction = (url: string, resourceType?: ResourceType) => {
+const mspTransformRequestFunc: RequestTransformFunctionCustom = (url: string, resourceType?: ResourceType, accessToken?: string | null | void) => {
     //console.log('private protocol url =>' ,url, resourceType)
     let resultRequest = {
         url: url
@@ -198,24 +197,39 @@ const mspTransformRequestFunc: RequestTransformFunction = (url: string, resource
     if (resourceType === 'Image') {
 
     }
-    if (resourceType === 'Tile') {
 
+    if (resourceType === 'Tile') {
+        /**
+         * tile 数据 url中没有ak参数
+         */
+        if (url.indexOf("ak=") == -1) {
+            const urlObject = parseUrl(url);
+            if (!config.REQUIRE_ACCESS_TOKEN) {
+                resultRequest.url = formatUrl(urlObject);
+            } else {
+                accessToken = accessToken || config.ACCESS_TOKEN;
+                urlObject.params.push(`access_token=${accessToken || ''}`);
+                urlObject.params.push(`ak=${accessToken || ''}`);
+                resultRequest.url = formatUrl(urlObject);
+            }
+        }
     }
+
     if (resourceType === 'Unknown') {
 
     }
 
     if (resourceType === 'Source' && url.indexOf('http://myHost') > -1) {
+        console.log('request Source url - > ', url);
         return {
             url: url.replace('http', 'https'),
             headers: {'my-custom-header': true},
             credentials: 'include'  // Include cookies for cross-origin requests
-        }
+        };
     }
 //console.log('target resource url =>' ,resultRequest.url, resourceType)
-    return resultRequest
-}
-
+    return resultRequest;
+};
 
 function isMapboxURL(url: string) {
     return url.indexOf('mapbox:') === 0 || url.indexOf('mapabc:') === 0;
@@ -233,5 +247,4 @@ function hasCacheDefeatingSku(url: string) {
     return url.indexOf('sku=') > 0 && isMapboxHTTPURL(url);
 }
 
-
-export {parseUrl, formatUrl, makeAPIURL}
+export {parseUrl, formatUrl, makeAPIURL};
