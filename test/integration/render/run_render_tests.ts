@@ -147,6 +147,8 @@ function compareRenderResults(directory: string, testData: TestData, data: Uint8
         }
     }
     actualImg.data = data as any;
+    const actualBuf = PNG.sync.write(actualImg, {filterType: 4});
+    testData.actual = actualBuf.toString('base64');
 
     // there may be multiple expected images, covering different platforms
     let globPattern = path.join(dir, 'expected*.png');
@@ -173,6 +175,9 @@ function compareRenderResults(directory: string, testData: TestData, data: Uint8
         const expectedBuf = fs.readFileSync(path);
         const expectedImg = PNG.sync.read(expectedBuf);
         const diffImg = new PNG({width, height});
+        if (!testData.expected) {
+            testData.expected = expectedBuf.toString('base64'); // default expected image
+        }
 
         const diff = pixelmatch(
             actualImg.data, expectedImg.data, diffImg.data,
@@ -186,7 +191,6 @@ function compareRenderResults(directory: string, testData: TestData, data: Uint8
     }
 
     const diffBuf = PNG.sync.write(minDiffImg, {filterType: 4});
-    const actualBuf = PNG.sync.write(actualImg, {filterType: 4});
 
     fs.writeFileSync(diffPath, diffBuf);
     fs.writeFileSync(actualPath, actualBuf);
@@ -194,7 +198,6 @@ function compareRenderResults(directory: string, testData: TestData, data: Uint8
     testData.difference = minDiff;
     testData.ok = minDiff <= testData.allowed;
 
-    testData.actual = actualBuf.toString('base64');
     testData.expected = minExpectedBuf.toString('base64');
     testData.diff = diffBuf.toString('base64');
 }
@@ -294,17 +297,19 @@ async function getImageFromStyle(styleForTest: StyleWithTestData, page: Page): P
             }
 
             onAdd(map: Map, gl: WebGL2RenderingContext) {
-                const vertexSource = `
-                attribute vec3 aPos;
+                const vertexSource = `#version 300 es
+                in vec3 aPos;
                 uniform mat4 u_matrix;
                 void main() {
                     gl_Position = u_matrix * vec4(aPos, 1.0);
                     gl_PointSize = 20.0;
                 }`;
 
-                const fragmentSource = `
+                const fragmentSource = `#version 300 es
+                
+                out highp vec4 fragColor;
                 void main() {
-                    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+                    fragColor = vec4(1.0, 0.0, 0.0, 1.0);
                 }`;
 
                 const vertexShader = gl.createShader(gl.VERTEX_SHADER);
@@ -353,21 +358,21 @@ async function getImageFromStyle(styleForTest: StyleWithTestData, page: Page): P
 
             onAdd(map: Map, gl: WebGL2RenderingContext) {
 
-                const vertexSource = `
-        
-                attribute vec3 aPos;
+                const vertexSource = `#version 300 es
+
+                in vec3 aPos;
                 uniform mat4 uMatrix;
-        
+
                 void main() {
                     gl_Position = uMatrix * vec4(aPos, 1.0);
-                }
-                `;
+                }`;
 
-                const fragmentSource = `
+                const fragmentSource = `#version 300 es
+
+                out highp vec4 fragColor;
                 void main() {
-                    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-                }
-                `;
+                    fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+                }`;
 
                 const vertexShader = gl.createShader(gl.VERTEX_SHADER);
                 gl.shaderSource(vertexShader, vertexSource);
@@ -679,50 +684,46 @@ function printProgress(test: TestData, total: number, index: number) {
  * @returns
  */
 function printStatistics(stats: TestStats): boolean {
-    const erroredCount = stats.errored.length;
-    const failedCount = stats.failed.length;
-    const passedCount = stats.passed.length;
 
-    function printStat(status: string, statusCount: number) {
+    function printStat(status: string, subsetStats: TestData[]) {
+        const statusCount = subsetStats.length;
         if (statusCount > 0) {
             console.log(`${statusCount} ${status} (${(100 * statusCount / stats.total).toFixed(1)}%)`);
+            if (status !== 'passed') {
+                for (let i = 0; i < subsetStats.length; i++) {
+                    printProgress(subsetStats[i], statusCount, i + 1);
+                }
+            }
         }
     }
 
-    printStat('passed', passedCount);
-    printStat('failed', failedCount);
-    printStat('errored', erroredCount);
+    printStat('passed', stats.passed);
+    printStat('failed', stats.failed);
+    printStat('errored', stats.errored);
 
-    return (failedCount + erroredCount) === 0;
+    return (stats.failed.length + stats.errored.length) === 0;
 }
 
 function getReportItem(test: TestData) {
-    let status: 'errored' | 'failed';
-
-    if (test.error) {
-        status = 'errored';
-    } else {
-        status = 'failed';
-    }
-
     return `<div class="test">
     <h2>${test.id}</h2>
-    ${status !== 'errored' ? `
+    ${test.actual ? `
     <div class="imagewrap">
-    <div>
-    <p>Actual</p>
-    <img src="data:image/png;base64,${test.actual}" data-alt-src="data:image/png;base64,${test.expected}">
-    </div>
-    <div>
-    <p>Diff</p>
-    <img src="data:image/png;base64,${test.diff}" data-alt-src="data:image/png;base64,${test.expected}">
-    </div>
-    <div>
-    <p>Closest expected</p>
-    <img src="data:image/png;base64,${test.expected}"  >
-    </div>
-        </div>` : ''
-}
+        <div>
+        <p>Actual</p>
+        <img src="data:image/png;base64,${test.actual}" data-alt-src="data:image/png;base64,${test.expected}">
+        </div>
+        ${test.diff ? `
+        <div>
+        <p>Diff</p>
+        <img src="data:image/png;base64,${test.diff}" data-alt-src="data:image/png;base64,${test.expected}">
+        </div>` : ''}
+        ${test.expected ? `
+        <div>
+        <p>Closest expected</p>
+        <img src="data:image/png;base64,${test.expected}"  >
+        </div>` : ''}
+    </div>` : ''}
     ${test.error ? `<p style="color: red"><strong>Error:</strong> ${test.error.message}</p>` : ''}
     ${test.difference ? `<p class="diff"><strong>Diff:</strong> ${test.difference}</p>` : ''}
 </div>`;
@@ -745,6 +746,20 @@ function applyDebugParameter(options: RenderOptions, page: Page) {
                 console.error('Request failed and request object is ', request);
             }
         });
+    }
+}
+
+async function runTests(page: Page, testStyles: StyleWithTestData[], directory: string) {
+    let index = 0;
+    for (const style of testStyles) {
+        try {
+            //@ts-ignore
+            const data = await getImageFromStyle(style, page);
+            compareRenderResults(directory, style.metadata.test, data);
+        } catch (ex) {
+            style.metadata.test.error = ex;
+        }
+        printProgress(style.metadata.test, testStyles.length, ++index);
     }
 }
 
@@ -795,44 +810,25 @@ async function executeRenderTests() {
     const directory = path.join(__dirname);
     let testStyles = getTestStyles(options, directory, (server.address() as any).port);
 
-    if (process.env.SPLIT_COUNT === '2') {
-
-        const half = Math.ceil(testStyles.length / 2);
-        const firstHalf = testStyles.slice(0, half);
-        const secondHalf = testStyles.slice(half);
-
-        testStyles = [firstHalf, secondHalf][parseInt(process.env.CURRENT_SPLIT_INDEX!)];
+    if (process.env.SPLIT_COUNT && process.env.CURRENT_SPLIT_INDEX) {
+        const numberOfTestsForThisPart = Math.ceil(testStyles.length / +process.env.SPLIT_COUNT);
+        testStyles = testStyles.splice(+process.env.CURRENT_SPLIT_INDEX * numberOfTestsForThisPart, numberOfTestsForThisPart);
     }
 
-    if (process.env.SPLIT_COUNT === '3') {
-
-        const m = Math.ceil(testStyles.length / 3);
-        const n = Math.ceil(2 * testStyles.length / 3);
-
-        const first = testStyles.slice(0, m);
-        const second = testStyles.slice(m, n);
-        const third = testStyles.slice(n, testStyles.length);
-
-        testStyles = [first, second, third][parseInt(process.env.CURRENT_SPLIT_INDEX!)];
-    }
-
-    let index = 0;
-
-    const page = await browser.newPage();
+    let page = await browser.newPage();
     applyDebugParameter(options, page);
     await page.addScriptTag({path: 'dist/maplibre-gl.js'});
 
-    for (const style of testStyles) {
-        try {
-            //@ts-ignore
+    await runTests(page, testStyles, directory);
 
-            const data = await getImageFromStyle(style, page);
-            compareRenderResults(directory, style.metadata.test, data);
-
-        } catch (ex) {
-            style.metadata.test.error = ex;
-        }
-        printProgress(style.metadata.test, testStyles.length, ++index);
+    const failedTests = testStyles.filter(t => t.metadata.test.error || !t.metadata.test.ok);
+    if (failedTests.length > 0 && failedTests.length < testStyles.length) {
+        console.log(`Re-running failed tests: ${failedTests.length}`);
+        page.close();
+        page = await browser.newPage();
+        applyDebugParameter(options, page);
+        await page.addScriptTag({path: 'dist/maplibre-gl.js'});
+        await runTests(page, failedTests, directory);
     }
 
     page.close();

@@ -18,8 +18,9 @@ import Terrain, {} from '../render/terrain';
 import {mercatorZfromAltitude} from '../geo/mercator_coordinate';
 import Transform from '../geo/transform';
 import {StyleImageInterface} from '../style/style_image';
-import ImageRequest from '../util/image_request';
 import Style from '../style/style';
+import {MapSourceDataEvent} from './events';
+import config from '../util/config';
 
 function createStyleSource() {
     return {
@@ -164,6 +165,16 @@ describe('Map', () => {
     });
 
     describe('#mapOptions', () => {
+        test('maxTileCacheZoomLevels: Default value is set', () => {
+            const map = createMap();
+            expect(map._maxTileCacheZoomLevels).toBe(config.MAX_TILE_CACHE_ZOOM_LEVELS);
+        });
+
+        test('maxTileCacheZoomLevels: Value can be set via map options', () => {
+            const map = createMap({maxTileCacheZoomLevels: 1});
+            expect(map._maxTileCacheZoomLevels).toBe(1);
+        });
+
         test('Style validation is enabled by default', () => {
             let validationOption = false;
             jest.spyOn(Style.prototype, 'loadJSON').mockImplementationOnce((styleJson, options) => {
@@ -532,9 +543,28 @@ describe('Map', () => {
 
             map.on('load', () => {
                 map.on('data', (e) => {
-                    if (e.dataType === 'source' && e.sourceDataType === 'metadata') {
+                    if (e.dataType === 'source' && e.sourceDataType === 'idle') {
                         expect(map.isSourceLoaded('geojson')).toBe(true);
                         done();
+                    }
+                });
+                map.addSource('geojson', createStyleSource());
+                expect(map.isSourceLoaded('geojson')).toBe(false);
+            });
+        });
+
+        test('Map#isSourceLoaded (equivalent to event.isSourceLoaded)', done => {
+            const style = createStyle();
+            const map = createMap({style});
+
+            map.on('load', () => {
+                map.on('data', (e) => {
+                    if (e.dataType === 'source' && 'source' in e) {
+                        const sourceDataEvent = e as MapSourceDataEvent;
+                        expect(map.isSourceLoaded('geojson')).toBe(sourceDataEvent.isSourceLoaded);
+                        if (sourceDataEvent.sourceDataType === 'idle') {
+                            done();
+                        }
                     }
                 });
                 map.addSource('geojson', createStyleSource());
@@ -803,7 +833,7 @@ describe('Map', () => {
             expect(spyC).not.toHaveBeenCalled();
         });
 
-        test('do resize if trackResize is true (default)', () => {
+        test('do resize if trackResize is true (default)', async () => {
             let observerCallback: Function = null;
             global.ResizeObserver = jest.fn().mockImplementation((c) => ({
                 observe: () => { observerCallback = c; }
@@ -814,8 +844,16 @@ describe('Map', () => {
             const spyA = jest.spyOn(map, '_update');
             const spyB = jest.spyOn(map, 'resize');
 
-            observerCallback();
+            // The initial "observe" event fired by ResizeObserver should be captured/muted
+            // in the map constructor
 
+            observerCallback();
+            expect(spyA).not.toHaveBeenCalled();
+            expect(spyB).not.toHaveBeenCalled();
+
+            // Following "observe" events should fire a resize / _update
+
+            observerCallback();
             expect(spyA).toHaveBeenCalled();
             expect(spyB).toHaveBeenCalled();
         });
@@ -2697,30 +2735,6 @@ describe('Map', () => {
                 expect(errorMessageObject.statusMessage).toBe('mocked webglcontextcreationerror message');
             }
 
-        });
-
-        test('should call call ImageRequest.processQueue() only when moving', () => {
-            const style = createStyle();
-            const map = createMap({style});
-
-            let imageQueueProcessRequestCallCounter = 0;
-            jest.spyOn(ImageRequest, 'processQueue').mockImplementation(() => {
-                imageQueueProcessRequestCallCounter++;
-                return 0;
-            });
-            let mockIsMoving = true;
-
-            jest.spyOn(map, 'isMoving').mockImplementation(() => {
-                return mockIsMoving;
-            });
-
-            // when moving, expect ImageRequest.processQueue is called on repaint
-            map._render(0);
-            expect(imageQueueProcessRequestCallCounter).toBe(1);
-
-            mockIsMoving = false;
-            map._render(1);
-            expect(imageQueueProcessRequestCallCounter).toBe(1);
         });
     });
 

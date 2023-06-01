@@ -22,6 +22,7 @@ import type {Callback} from '../types/callback';
 import type {SourceSpecification} from '@maplibre/maplibre-gl-style-spec';
 import type {MapSourceDataEvent} from '../ui/events';
 import Terrain from '../render/terrain';
+import config from '../util/config';
 
 /**
  * `SourceCache` is responsible for
@@ -53,6 +54,7 @@ class SourceCache extends Evented {
         [_ in any]: ReturnType<typeof setTimeout>;
     };
     _maxTileCacheSize: number;
+    _maxTileCacheZoomLevels: number;
     _paused: boolean;
     _shouldReloadOnResume: boolean;
     _coveredTiles: {[_: string]: boolean};
@@ -63,6 +65,8 @@ class SourceCache extends Evented {
     tileSize: number;
     _state: SourceFeatureState;
     _loadedParentTiles: {[_: string]: Tile};
+    _didEmitContent: boolean;
+    _updated: boolean;
 
     static maxUnderzooming: number;
     static maxOverzooming: number;
@@ -85,6 +89,8 @@ class SourceCache extends Evented {
                 if (this.transform) {
                     this.update(this.transform, this.terrain);
                 }
+
+                this._didEmitContent = true;
             }
         });
 
@@ -104,15 +110,19 @@ class SourceCache extends Evented {
         this._timers = {};
         this._cacheTimers = {};
         this._maxTileCacheSize = null;
+        this._maxTileCacheZoomLevels = null;
         this._loadedParentTiles = {};
 
         this._coveredTiles = {};
         this._state = new SourceFeatureState();
+        this._didEmitContent = false;
+        this._updated = false;
     }
 
     onAdd(map: Map) {
         this.map = map;
         this._maxTileCacheSize = map ? map._maxTileCacheSize : null;
+        this._maxTileCacheZoomLevels = map ? map._maxTileCacheZoomLevels : null;
         if (this._source && this._source.onAdd) {
             this._source.onAdd(map);
         }
@@ -134,6 +144,10 @@ class SourceCache extends Evented {
         if (this._sourceErrored) { return true; }
         if (!this._sourceLoaded) { return false; }
         if (!this._source.loaded()) { return false; }
+        if ((this.used !== undefined || this.usedForTerrain !== undefined) && !this.used && !this.usedForTerrain) { return true; }
+        // do not consider as loaded if the update hasn't been called yet (we do not know if we will have any tiles to fetch)
+        if (!this._updated) { return false; }
+
         for (const t in this._tiles) {
             const tile = this._tiles[t];
             if (tile.state !== 'loaded' && tile.state !== 'errored')
@@ -435,10 +449,11 @@ class SourceCache extends Evented {
         const widthInTiles = Math.ceil(transform.width / this._source.tileSize) + 1;
         const heightInTiles = Math.ceil(transform.height / this._source.tileSize) + 1;
         const approxTilesInView = widthInTiles * heightInTiles;
-        const commonZoomRange = 5;
-
+        const commonZoomRange = this._maxTileCacheZoomLevels === null ?
+            config.MAX_TILE_CACHE_ZOOM_LEVELS : this._maxTileCacheZoomLevels;
         const viewDependentMaxSize = Math.floor(approxTilesInView * commonZoomRange);
-        const maxSize = typeof this._maxTileCacheSize === 'number' ? Math.min(this._maxTileCacheSize, viewDependentMaxSize) : viewDependentMaxSize;
+        const maxSize = typeof this._maxTileCacheSize === 'number' ?
+            Math.min(this._maxTileCacheSize, viewDependentMaxSize) : viewDependentMaxSize;
 
         this._cache.setMaxSize(maxSize);
     }
@@ -542,6 +557,14 @@ class SourceCache extends Evented {
                 }
             }
             idealTileIDs = idealTileIDs.concat(Object.values(parents));
+        }
+
+        const noPendingDataEmissions = idealTileIDs.length === 0 && !this._updated && this._didEmitContent;
+        this._updated = true;
+        // if we won't have any tiles to fetch and content is already emitted
+        // there will be no more data emissions, so we need to emit the event with isSourceLoaded = true
+        if (noPendingDataEmissions) {
+            this.fire(new Event('data', {sourceDataType: 'idle', dataType: 'source', sourceId: this.id}));
         }
 
         // Retain is a list of tiles that we shouldn't delete, even if they are not
