@@ -1,13 +1,13 @@
-import Painter from './painter';
-import Tile from '../source/tile';
+import {Painter} from './painter';
+import {Tile} from '../source/tile';
 import {Color} from '@maplibre/maplibre-gl-style-spec';
 import {OverscaledTileID} from '../source/tile_id';
 import {drawTerrain} from './draw_terrain';
-import Style from '../style/style';
-import Terrain from './terrain';
-import RenderPool from '../gl/render_pool';
-import Texture from './texture';
-import type StyleLayer from '../style/style_layer';
+import {Style} from '../style/style';
+import {Terrain} from './terrain';
+import {RenderPool} from '../gl/render_pool';
+import {Texture} from './texture';
+import type {StyleLayer} from '../style/style_layer';
 
 // lookup table which layers should rendered to texture
 const LAYERS: { [keyof in StyleLayer['type']]?: boolean } = {
@@ -21,7 +21,7 @@ const LAYERS: { [keyof in StyleLayer['type']]?: boolean } = {
 /**
  * RenderToTexture
  */
-export default class RenderToTexture {
+export class RenderToTexture {
     painter: Painter;
     terrain: Terrain;
     pool: RenderPool;
@@ -108,8 +108,8 @@ export default class RenderToTexture {
      * Because of the stylesheet possibility to mixing render-to-texture layers
      * and 'live'-layers (f.e. symbols) it is necessary to create more stacks. For example
      * a symbol-layer is in between of fill-layers.
-     * @param {StyleLayer} layer the layer to render
-     * @returns {boolean} if true layer is rendered to texture, otherwise false
+     * @param layer - the layer to render
+     * @returns if true layer is rendered to texture, otherwise false
      */
     renderLayer(layer: StyleLayer): boolean {
         if (layer.isHidden(this.painter.transform.zoom)) return false;

@@ -1,5 +1,5 @@
 import {extend} from '../util/util';
-import Tile from './tile';
+import {Tile} from './tile';
 import type {FeatureState} from '@maplibre/maplibre-gl-style-spec';
 
 export type FeatureStates = {[featureId: string]: FeatureState};
@@ -12,9 +12,8 @@ export type LayerFeatureStates = {[layer: string]: FeatureStates};
  * between coalesce() events. addFeatureState() and removeFeatureState() also update their counterpart's
  * list of changes, such that coalesce() can apply the proper state changes while agnostic to the order of operations.
  * In deletedStates, all null's denote complete removal of state at that scope
- * @private
 */
-class SourceFeatureState {
+export class SourceFeatureState {
     state: LayerFeatureStates;
     stateChanges: LayerFeatureStates;
     deletedStates: {};
@@ -155,5 +154,3 @@ class SourceFeatureState {
         }
     }
 }
-
-export default SourceFeatureState;

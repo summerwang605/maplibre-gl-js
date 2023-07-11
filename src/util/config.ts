@@ -1,6 +1,11 @@
 import type {Cancelable} from '../types/cancelable';
 import type {RequestParameters, ResponseCallback} from './ajax';
 
+/**
+ * This is a global config object used to store the configuration
+ * It is available in the workers as well.
+ * Only serializable data should be stored in it.
+ */
 type Config = {
     REPORT_MAP_EVENTS: boolean, //上报地图初始化事件开关
     REPORT_MAP_SESSION: boolean, //上报地图会话开关
@@ -22,11 +27,13 @@ type Config = {
     MAX_PARALLEL_IMAGE_REQUESTS: number;
     MAX_PARALLEL_IMAGE_REQUESTS_PER_FRAME: number;
     MAX_TILE_CACHE_ZOOM_LEVELS: number;
-    REGISTERED_PROTOCOLS: {[x: string]: (requestParameters: RequestParameters, callback: ResponseCallback<any>) => Cancelable};
+    REGISTERED_PROTOCOLS: { [x: string]: (requestParameters: RequestParameters, callback: ResponseCallback<any>) => Cancelable };
     WORKER_URL: string;
 };
+
 let mapboxHTTPURLRegex;
-const config: Config = {
+
+export const config: Config = {
     MAX_PARALLEL_IMAGE_REQUESTS: 16,
     MAX_PARALLEL_IMAGE_REQUESTS_PER_FRAME: 8,
     MAX_TILE_CACHE_ZOOM_LEVELS: 5,
@@ -112,6 +119,4 @@ const config: Config = {
     ACCESS_TOKEN: null,
     TRAFFIC_SOURCE: null,
     WORKER_URL: ''
-}
-
-export default config;
+};

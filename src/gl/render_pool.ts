@@ -1,6 +1,6 @@
-import Texture from '../render/texture';
-import Context from './context';
-import Framebuffer from './framebuffer';
+import {Texture} from '../render/texture';
+import {Context} from './context';
+import {Framebuffer} from './framebuffer';
 
 export type PoolObject = {
     id: number;
@@ -12,10 +12,10 @@ export type PoolObject = {
 /**
  * RenderPool a resource pool for textures and framebuffers
  */
-export default class RenderPool {
+export class RenderPool {
     private _objects: Array<PoolObject>;
     /**
-     * @property {Array<number>} _recentlyUsed An index array of recently used pool objects.
+     * An index array of recently used pool objects.
      * Items that are used recently are last in the array
      */
     private _recentlyUsed: Array<number>;

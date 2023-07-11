@@ -1,7 +1,7 @@
-import Map, {MapOptions} from './map';
+import {Map, MapOptions} from './map';
 import {createMap, setErrorWebGlContext, beforeMapTest} from '../util/test/util';
-import LngLat from '../geo/lng_lat';
-import Tile from '../source/tile';
+import {LngLat} from '../geo/lng_lat';
+import {Tile} from '../source/tile';
 import {OverscaledTileID} from '../source/tile_id';
 import {Event, ErrorEvent} from '../util/evented';
 import simulate from '../../test/unit/lib/simulate_interaction';
@@ -11,16 +11,16 @@ import {RequestTransformFunction} from '../util/request_manager';
 import {extend} from '../util/util';
 import {LngLatBoundsLike} from '../geo/lng_lat_bounds';
 import {IControl} from './control/control';
-import EvaluationParameters from '../style/evaluation_parameters';
+import {EvaluationParameters} from '../style/evaluation_parameters';
 import {fakeServer, FakeServer} from 'nise';
 import {CameraOptions} from './camera';
-import Terrain, {} from '../render/terrain';
+import {Terrain} from '../render/terrain';
 import {mercatorZfromAltitude} from '../geo/mercator_coordinate';
-import Transform from '../geo/transform';
+import {Transform} from '../geo/transform';
 import {StyleImageInterface} from '../style/style_image';
-import Style from '../style/style';
+import {Style} from '../style/style';
 import {MapSourceDataEvent} from './events';
-import config from '../util/config';
+import {config} from '../util/config';
 
 function createStyleSource() {
     return {
@@ -600,6 +600,13 @@ describe('Map', () => {
     });
 
     describe('#getStyle', () => {
+        test('returns undefined if the style has not loaded yet', done => {
+            const style = createStyle();
+            const map = createMap({style});
+            expect(map.getStyle()).toBeUndefined();
+            done();
+        });
+
         test('returns the style', done => {
             const style = createStyle();
             const map = createMap({style});
@@ -858,6 +865,19 @@ describe('Map', () => {
             expect(spyB).toHaveBeenCalled();
         });
 
+        test('width and height correctly rounded', () => {
+            const map = createMap();
+            const container = map.getContainer();
+
+            Object.defineProperty(container, 'clientWidth', {value: 250.6});
+            Object.defineProperty(container, 'clientHeight', {value: 250.6});
+            map.resize();
+
+            expect(map.getCanvas().width).toBe(250);
+            expect(map.getCanvas().height).toBe(250);
+            expect(map.painter.width).toBe(250);
+            expect(map.painter.height).toBe(250);
+        });
     });
 
     describe('#getBounds', () => {
@@ -2488,6 +2508,14 @@ describe('Map', () => {
         expect(map.getPixelRatio()).toBe(devicePixelRatio);
     });
 
+    test('pixel ratio by default reflects devicePixelRatio changes', () => {
+        global.devicePixelRatio = 0.25;
+        const map = createMap();
+        expect(map.getPixelRatio()).toBe(0.25);
+        global.devicePixelRatio = 1;
+        expect(map.getPixelRatio()).toBe(1);
+    });
+
     test('canvas has the expected size', () => {
         const container = window.document.createElement('div');
         Object.defineProperty(container, 'clientWidth', {value: 512});
@@ -2720,7 +2748,9 @@ describe('Map', () => {
             expect(cameraOptions).toBeDefined();
             expect(mockedGetElevation.mock.calls).toHaveLength(0);
         });
+    });
 
+    describe('webgl errors', () => {
         test('WebGL error while creating map', () => {
             setErrorWebGlContext();
             try {
@@ -2735,6 +2765,65 @@ describe('Map', () => {
                 expect(errorMessageObject.statusMessage).toBe('mocked webglcontextcreationerror message');
             }
 
+        });
+        test('Hit WebGL max drawing buffer limit', () => {
+            // Simulate a device with MAX_TEXTURE_SIZE=16834 and max rendering area of ~32Mpx
+            const container = window.document.createElement('div');
+            Object.defineProperty(container, 'clientWidth', {value: 8000});
+            Object.defineProperty(container, 'clientHeight', {value: 4500});
+            const map = createMap({container, maxCanvasSize: [16834, 16834], pixelRatio: 1});
+            jest.spyOn(map.painter.context.gl, 'drawingBufferWidth', 'get').mockReturnValue(7536);
+            jest.spyOn(map.painter.context.gl, 'drawingBufferHeight', 'get').mockReturnValue(4239);
+            map.resize();
+            expect(map.getCanvas().width).toBe(7536);
+            expect(map.getCanvas().height).toBe(4239);
+            // Check if maxCanvasSize is updated
+            expect(map._maxCanvasSize).toEqual([7536, 4239]);
+        });
+    });
+
+    describe('Max Canvas Size option', () => {
+        test('maxCanvasSize width = height', () => {
+            const container = window.document.createElement('div');
+            Object.defineProperty(container, 'clientWidth', {value: 2048});
+            Object.defineProperty(container, 'clientHeight', {value: 2048});
+            const map = createMap({container, maxCanvasSize: [8192, 8192], pixelRatio: 5});
+            map.resize();
+            expect(map.getCanvas().width).toBe(8192);
+            expect(map.getCanvas().height).toBe(8192);
+        });
+
+        test('maxCanvasSize width != height', () => {
+            const container = window.document.createElement('div');
+            Object.defineProperty(container, 'clientWidth', {value: 1024});
+            Object.defineProperty(container, 'clientHeight', {value: 2048});
+            const map = createMap({container, maxCanvasSize: [8192, 4096], pixelRatio: 3});
+            map.resize();
+            expect(map.getCanvas().width).toBe(2048);
+            expect(map.getCanvas().height).toBe(4096);
+        });
+
+        test('maxCanvasSize below clientWidth and clientHeigth', () => {
+            const container = window.document.createElement('div');
+            Object.defineProperty(container, 'clientWidth', {value: 12834});
+            Object.defineProperty(container, 'clientHeight', {value: 9000});
+            const map = createMap({container, maxCanvasSize: [4096, 8192], pixelRatio: 1});
+            map.resize();
+            expect(map.getCanvas().width).toBe(4096);
+            expect(map.getCanvas().height).toBe(2872);
+        });
+
+        test('maxCanvasSize with setPixelRatio', () => {
+            const container = window.document.createElement('div');
+            Object.defineProperty(container, 'clientWidth', {value: 2048});
+            Object.defineProperty(container, 'clientHeight', {value: 2048});
+            const map = createMap({container, maxCanvasSize: [3072, 3072], pixelRatio: 1.25});
+            map.resize();
+            expect(map.getCanvas().width).toBe(2560);
+            expect(map.getCanvas().height).toBe(2560);
+            map.setPixelRatio(2);
+            expect(map.getCanvas().width).toBe(3072);
+            expect(map.getCanvas().height).toBe(3072);
         });
     });
 

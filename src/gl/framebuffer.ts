@@ -1,8 +1,11 @@
 import {ColorAttachment, DepthAttachment, DepthStencilAttachment} from './value';
 
-import type Context from './context';
+import type {Context} from './context';
 
-class Framebuffer {
+/**
+ * A framebuffer holder object
+ */
+export class Framebuffer {
     context: Context;
     width: number;
     height: number;
@@ -42,5 +45,3 @@ class Framebuffer {
         gl.deleteFramebuffer(this.framebuffer);
     }
 }
-
-export default Framebuffer;
