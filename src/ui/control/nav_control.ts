@@ -1,6 +1,6 @@
 import Point from '@mapbox/point-geometry';
 
-import DOM from '../../util/dom';
+import {DOM} from '../../util/dom';
 import {extend, bindAll} from '../../util/util';
 import {
     MouseRotateHandler,
@@ -9,7 +9,7 @@ import {
     generateMousePitchHandler
 } from '../handler/mouse';
 
-import type Map from '../map';
+import type {Map} from '../map';
 import {
     generateOneFingerTouchPitchHandler,
     generateOneFingerTouchRotationHandler,
