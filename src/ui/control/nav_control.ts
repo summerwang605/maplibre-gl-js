@@ -31,7 +31,7 @@ const defaultOptions: NavOptions = {
     position: 'bottom-right'
 };
 
-class NavControl {
+export class NavControl {
     _map: Map;
     options: NavOptions;
     _container: HTMLElement;
@@ -440,5 +440,3 @@ class NavMouseRotateWrapper {
         this.offTemp();
     }
 }
-
-export default NavControl;

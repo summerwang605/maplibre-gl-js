@@ -1,5 +1,5 @@
 import {makeAPIURL, parseUrl, RequestTransformFunction, ResourceType} from '../request_manager';
-import config from '../config';
+import {config} from '../config';
 
 /**
  * 处理和转换资源url

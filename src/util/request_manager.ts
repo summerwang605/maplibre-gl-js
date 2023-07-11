@@ -1,5 +1,5 @@
 import type {RequestParameters} from './ajax';
-import config from './config';
+import {config} from './config';
 
 /**
  * A type of MapLibre resource.

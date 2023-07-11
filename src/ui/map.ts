@@ -2487,7 +2487,7 @@ export class Map extends Camera {
                                         2
                                     ],
                                     [
-                                        10,.
+                                        10,
                                         2.2
                                     ],
                                     [

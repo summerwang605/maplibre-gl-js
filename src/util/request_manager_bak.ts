@@ -1,5 +1,5 @@
 import {ResourceType} from '../util/request_manager';
-import config from '../util/config';
+import {config} from '../util/config';
 
 import type {RequestParameters} from './ajax';
 import {isMapboxURL} from './request/request_transform_mapabc_msp';

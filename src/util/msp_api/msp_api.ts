@@ -1,4 +1,4 @@
-import config from '../config';
+import {config} from '../config';
 import {extend} from '../util';
 import {getJSON} from '../ajax';
 import {ErrorEvent} from '../evented';
