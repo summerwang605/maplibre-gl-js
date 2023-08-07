@@ -522,7 +522,7 @@ export class Map extends Camera {
     _terrainDataCallback: (e: MapStyleDataEvent | MapSourceDataEvent) => void;
 
     /**
-     * @hidden
+     * @internal
      * image queue throttling handle. To be used later when clean up
      */
     _imageQueueHandle: number;
@@ -723,9 +723,9 @@ export class Map extends Camera {
     }
 
     /**
+     * @internal
      * Returns a unique number for this map instance which is used for the MapLoadEvent
      * to make sure we only fire one event per instantiated map object.
-     * @hidden
      * @returns the uniq map ID
      */
     _getMapId() {
@@ -884,9 +884,9 @@ export class Map extends Camera {
     }
 
     /**
+     * @internal
      * Return the map's pixel ratio eventually scaled down to respect maxCanvasSize.
      * Internally you should use this and not getPixelRatio().
-     * @hidden
      */
     _getClampedPixelRatio(width: number, height: number): number {
         const {0: maxCanvasWidth, 1: maxCanvasHeight} = this._maxCanvasSize;
@@ -3454,9 +3454,9 @@ export class Map extends Camera {
     }
 
     /**
+     * @internal
      * Update this map's style and sources, and re-render the map.
      *
-     * @hidden
      * @param updateStyle - mark the map's style for reprocessing as
      * well as its sources
      * @returns `this`
@@ -3472,9 +3472,10 @@ export class Map extends Camera {
     }
 
     /**
+     * @internal
      * Request that the given callback be executed during the next render
      * frame.  Schedule a render frame if one is not already scheduled.
-     * @hidden
+     *
      * @returns An id that can be used to cancel the callback
      */
     _requestRenderFrame(callback: () => void): TaskID {
@@ -3487,6 +3488,7 @@ export class Map extends Camera {
     }
 
     /**
+     * @internal
      * Call when a (re-)render of the map is required:
      * - The style has changed (`setPaintProperty()`, etc.)
      * - Source data has changed (e.g. tiles have finished loading)
@@ -3494,7 +3496,6 @@ export class Map extends Camera {
      * - A transition is in progress
      *
      * @param paintStartTimeStamp - The time when the animation frame began executing.
-     * @hidden
      *
      * @returns `this`
      */
