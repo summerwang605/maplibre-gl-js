@@ -8,6 +8,12 @@
 
 - _...Add new stuff here..._
 
+## 3.3.0
+
+### ✨ Features and improvements
+
+- Add support for [`text-variable-anchor-offset`](https://maplibre.org/maplibre-style-spec/layers/#layout-symbol-text-variable-anchor-offset) symbol style layer property ([#2914](https://github.com/maplibre/maplibre-gl-js/pull/2914))
+
 ## 3.2.2
 
 ### ✨ Features and improvements
