@@ -6,7 +6,7 @@ import {OverscaledTileID} from '../source/tile_id';
 import {Event, ErrorEvent} from '../util/evented';
 import simulate from '../../test/unit/lib/simulate_interaction';
 import {fixedLngLat, fixedNum} from '../../test/unit/lib/fixed';
-import {LayerSpecification, SourceSpecification, StyleSpecification} from '@maplibre/maplibre-gl-style-spec';
+import {GeoJSONSourceSpecification, LayerSpecification, SourceSpecification, StyleSpecification} from '@maplibre/maplibre-gl-style-spec';
 import {RequestTransformFunction} from '../util/request_manager';
 import {extend} from '../util/util';
 import {LngLatBoundsLike} from '../geo/lng_lat_bounds';
@@ -675,6 +675,19 @@ describe('Map', () => {
             map.addSource('fill', source);
         });
 
+        test('a layer can be added with an embedded source specification', () => {
+            const map = createMap({deleteStyle: true});
+            const source: GeoJSONSourceSpecification = {
+                type: 'geojson',
+                data: {type: 'Point', coordinates: [0, 0]}
+            };
+            map.addLayer({
+                id: 'foo',
+                type: 'symbol',
+                source
+            });
+        });
+
         test('returns the style with added source and layer', done => {
             const style = createStyle();
             const map = createMap({style});
@@ -848,21 +861,30 @@ describe('Map', () => {
 
             const map = createMap();
 
-            const spyA = jest.spyOn(map, '_update');
-            const spyB = jest.spyOn(map, 'resize');
+            const updateSpy = jest.spyOn(map, '_update');
+            const resizeSpy = jest.spyOn(map, 'resize');
 
             // The initial "observe" event fired by ResizeObserver should be captured/muted
             // in the map constructor
 
             observerCallback();
-            expect(spyA).not.toHaveBeenCalled();
-            expect(spyB).not.toHaveBeenCalled();
+            expect(updateSpy).not.toHaveBeenCalled();
+            expect(resizeSpy).not.toHaveBeenCalled();
 
-            // Following "observe" events should fire a resize / _update
+            // The next "observe" event should fire a resize / _update
 
             observerCallback();
-            expect(spyA).toHaveBeenCalled();
-            expect(spyB).toHaveBeenCalled();
+            expect(updateSpy).toHaveBeenCalled();
+            expect(resizeSpy).toHaveBeenCalledTimes(1);
+
+            // Additional "observe" events should be throttled
+            observerCallback();
+            observerCallback();
+            observerCallback();
+            observerCallback();
+            expect(resizeSpy).toHaveBeenCalledTimes(1);
+            await new Promise((resolve) => { setTimeout(resolve, 100); });
+            expect(resizeSpy).toHaveBeenCalledTimes(2);
         });
 
         test('width and height correctly rounded', () => {
@@ -2566,6 +2588,13 @@ describe('Map', () => {
                 expect(console.warn).toHaveBeenCalledTimes(1);
                 done();
             });
+        });
+    });
+
+    describe('#getTerrain', () => {
+        test('returns null when not set', () => {
+            const map = createMap();
+            expect(map.getTerrain()).toBeNull();
         });
     });
 

@@ -297,6 +297,8 @@ export class Marker extends Evented {
         map.getCanvasContainer().appendChild(this._element);
         map.on('move', this._update);
         map.on('moveend', this._update);
+        map.on('terrain', this._update);
+
         this.setDraggable(this._draggable);
         this._update();
 
@@ -419,7 +421,7 @@ export class Marker extends Evented {
             if (!('offset' in popup.options)) {
                 const markerHeight = 41 - (5.8 / 2);
                 const markerRadius = 13.5;
-                const linearOffset = Math.sqrt(Math.pow(markerRadius, 2) / 2);
+                const linearOffset = Math.abs(markerRadius) / Math.SQRT2;
                 popup.options.offset = this._defaultMarker ? {
                     'top': [0, 0],
                     'top-left': [0, 0],
@@ -504,8 +506,13 @@ export class Marker extends Evented {
         return this;
     }
 
-    _update = (e?: { type: 'move' | 'moveend' }) => {
+    _update = (e?: { type: 'move' | 'moveend' | 'terrain' | 'render' }) => {
         if (!this._map) return;
+
+        const isFullyLoaded = this._map.loaded() && !this._map.isMoving();
+        if (e?.type === 'terrain' || (e?.type === 'render' && !isFullyLoaded)) {
+            this._map.once('render', this._update);
+        }
 
         if (this._map.transform.renderWorldCopies) {
             this._lngLat = smartWrap(this._lngLat, this._pos, this._map.transform);
