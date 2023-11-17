@@ -209,7 +209,7 @@ describe('Map', () => {
             await map.once('idle');
             idleTriggered = true;
             map.zoomTo(0.5, {duration: 100});
-            spy.mockReset();
+            spy.mockRestore();
         });
     });
 
@@ -809,6 +809,36 @@ describe('Map', () => {
         expect(mapLayer.id).toBe(layer.id);
         expect(mapLayer.type).toBe(layer.type);
         expect(mapLayer.source).toBe(layer.source);
+    });
+
+    describe('#getLayersOrder', () => {
+        test('returns ids of layers in the correct order', done => {
+            const map = createMap({
+                style: extend(createStyle(), {
+                    'sources': {
+                        'raster': {
+                            type: 'raster',
+                            tiles: ['http://tiles.server']
+                        }
+                    },
+                    'layers': [{
+                        'id': 'raster',
+                        'type': 'raster',
+                        'source': 'raster'
+                    }]
+                })
+            });
+
+            map.on('style.load', () => {
+                map.addLayer({
+                    id: 'custom',
+                    type: 'custom',
+                    render() {}
+                }, 'raster');
+                expect(map.getLayersOrder()).toEqual(['custom', 'raster']);
+                done();
+            });
+        });
     });
 
     describe('#resize', () => {

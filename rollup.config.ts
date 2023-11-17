@@ -1,7 +1,7 @@
 import fs from 'fs';
 import sourcemaps from 'rollup-plugin-sourcemaps';
-import {plugins} from './build/rollup_plugins';
 import replace from '@rollup/plugin-replace';
+import {plugins, watchStagingPlugin} from './build/rollup_plugins';
 import banner from './build/banner';
 import bannerMapAbc from './build/banner-mapabc';
 import bannerTopsmap from './build/banner-topsmap';
@@ -57,10 +57,14 @@ const outputFile = getOutputFile(production, nameSpace);
  * 打包配置插件
  */
 let pluginsForRollup = plugins(production);
-let pluginsForRollup2 = production ? [] : [
+let pluginsForRollup2 = [
     // Ingest the sourcemaps produced in the first step of the build.
     // This is the only reason we use Rollup for this second pass
-    sourcemaps()
+    sourcemaps(),
+    // When running in development watch mode, tell rollup explicitly to watch
+    // for changes to the staging chunks built by the previous step. Otherwise
+    // only they get built, but not the merged dev build js
+    ...production ? [] : [watchStagingPlugin]
 ];
 
 /**
@@ -168,7 +172,8 @@ const config: RollupOptions[] = [{
         format: 'amd',
         sourcemap: 'inline',
         indent: false,
-        chunkFileNames: 'shared.js'
+        chunkFileNames: 'shared.js',
+        minifyInternalExports: production
     },
     onwarn: (message) => {
         console.error(message);
@@ -190,6 +195,10 @@ const config: RollupOptions[] = [{
         indent: false,
         intro: fs.readFileSync('./build/rollup/bundle_prelude_' + nameSpace + 'gl.js', 'utf8'),
         banner: fileBanner
+    },
+    watch: {
+        // give the staging chunks a chance to finish before rebuilding the dev build
+        buildDelay: 1000
     },
     treeshake: false,
     plugins: pluginsForRollup2, //替換字符插件用在第二部打包

@@ -104,7 +104,7 @@ export type MapOptions = {
      */
     attributionControl?: boolean;
     /**
-     * Attribuition text to show in an {@link AttributionControl}. Only applicable if `options.attributionControl` is `true`.
+     * Attribution text to show in an {@link AttributionControl}. Only applicable if `options.attributionControl` is `true`.
      */
     customAttribution?: string | Array<string>;
     /**
@@ -2701,6 +2701,20 @@ export class Map extends Camera {
      */
     getLayer(id: string): StyleLayer | undefined {
         return this.style.getLayer(id);
+    }
+
+    /**
+     * Return the ids of all layers currently in the style, including custom layers, in order.
+     *
+     * @returns ids of layers, in order
+     *
+     * @example
+     * ```ts
+     * const orderedLayerIds = map.getLayersOrder();
+     * ```
+     */
+    getLayersOrder(): string[] {
+        return this.style.getLayersOrder();
     }
 
     /**
