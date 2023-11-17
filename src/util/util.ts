@@ -434,7 +434,7 @@ export function isSafari(scope: any): boolean {
     if (_isSafari == null) {
         const userAgent = scope.navigator ? scope.navigator.userAgent : null;
         _isSafari = !!scope.safari ||
-        !!(userAgent && (/\b(iPad|iPhone|iPod)\b/.test(userAgent) || (!!userAgent.match('Safari') && !userAgent.match('Chrome'))));
+            !!(userAgent && (/\b(iPad|iPhone|iPod)\b/.test(userAgent) || (!!userAgent.match('Safari') && !userAgent.match('Chrome'))));
     }
     return _isSafari;
 }
@@ -520,34 +520,6 @@ export function arrayBufferToImage(data: ArrayBuffer, callback: (err?: Error | n
     img.src = data.byteLength ? URL.createObjectURL(blob) : transparentPngUrl;
 }
 
-
-
-/**
- * Given an array of member function names as strings, replace all of them
- * with bound versions that will always refer to `context` as `this`. This
- * is useful for classes where otherwise event bindings would reassign
- * `this` to the evented object or some other value: this lets you ensure
- * the `this` value always.
- *
- * @param fns list of member function names
- * @param context the context value
- * @example
- * function MyClass() {
- *   bindAll(['ontimer'], this);
- *   this.name = 'Tom';
- * }
- * MyClass.prototype.ontimer = function() {
- *   alert(this.name);
- * };
- * var myClass = new MyClass();
- * setTimeout(myClass.ontimer, 100);
- * @private
- */
-export function bindAll(fns: Array<string>, context: Object): void {
-    fns.forEach((fn) => {
-        if (!context[fn]) { return; }
-        context[fn] = context[fn].bind(context);
-    });
 /**
  * Computes the webcodecs VideoFrame API options to select a rectangle out of
  * an image and write it into the destination rectangle.
