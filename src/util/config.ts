@@ -9,7 +9,9 @@ import type {RequestParameters, ResponseCallback} from './ajax';
 type Config = {
     REPORT_MAP_EVENTS: boolean, //上报地图初始化事件开关
     REPORT_MAP_SESSION: boolean, //上报地图会话开关
+    SERVICE_URL: string,
     API_URL: string,
+    API_PATH: string,
     API_VERSION: string, //api版本信息，根据版本信息可不同的获取地图资源下载的url  如地图样式、字体、图标等
     API_URL_EVENTS: string,
     API_URL_SESSION: string,
@@ -42,6 +44,7 @@ export const config: Config = {
     REPORT_MAP_EVENTS: false, // 默认不上报
     REPORT_MAP_SESSION: false, // 默认不上报
     API_URL: 'https://api.mapbox.com', // api地址
+    API_PATH: '', // api服务路径
     API_URL_EVENTS: '/events/v2', //配置地图初始化事件上报数据接口地址
     API_URL_SESSION: '/map-sessions/v1', //配置地图初始化事件上报数据接口地址
     API_URL_FEEDBACK: '/feedback',
@@ -54,8 +57,15 @@ export const config: Config = {
                 mapboxHTTPURLRegex = prodMapboxHTTPURLRegex;
             }
         }
-
         return mapboxHTTPURLRegex;
+    },
+    /**
+     * 获取地图服务地址
+     * @returns {string|null}
+     * @constructor
+     */
+    get SERVICE_URL() {
+        return this.API_URL + (this.API_PATH || '');
     },
     /**
      * 获取事件数据上报地址

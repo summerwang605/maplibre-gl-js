@@ -667,3 +667,17 @@ export async function getImageData(
     }
     return readImageDataUsingOffscreenCanvas(image, x, y, width, height);
 }
+
+/**
+ * 绑定事件到某些对象中
+ * @param fns
+ * @param context
+ */
+export function bindAll(fns: Array<string>, context: Object): void {
+    fns.forEach((fn) => {
+        if (!context[fn]) {
+            return;
+        }
+        context[fn] = context[fn].bind(context);
+    });
+}

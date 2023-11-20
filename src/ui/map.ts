@@ -1793,9 +1793,9 @@ export class Map extends Camera {
     _getUIString(key: string) {
         const str = this._locale[key];
         if (str == null) {
-            throw new Error(`Missing UI string '${key}'`);
+            //throw new Error(`Missing UI string '${key}'`);
+            console.warn(`Missing UI string '${key}'`)
         }
-
         return str;
     }
 

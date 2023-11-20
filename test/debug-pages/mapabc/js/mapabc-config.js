@@ -18,7 +18,7 @@ api_config = {
 };
 
 mapabcgl.config.API_URL = api_config.url;
-mapabcgl.config.TRAFFIC_SOURCE = api_config.traffic_source;
+mapabcgl.config.API_PATH = api_config.api_path;
 mapabcgl.config.TRAFFIC_SOURCE = api_config.traffic_source;
 mapabcgl.config.API_URL_EVENTS = api_config.events_url;
 mapabcgl.config.API_URL_SESSION = api_config.session;

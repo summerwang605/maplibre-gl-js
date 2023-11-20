@@ -35,7 +35,7 @@ function poiSearch(requestParams: {}, callback: Function, accessToken: string) {
         }
     }
     let request = {
-        url: `${config.API_URL}/as/search/poi?${paramsArray.join('&')}`
+        url: `${config.SERVICE_URL}/as/search/poi?${paramsArray.join('&')}`
     }
     getJSON(request, (error?: Error | null, json?: any | null) => {
         if (error) {
@@ -68,7 +68,7 @@ function walking(requestOptions: Object, callback: Function, accessToken: string
         }
     }
     let request = {
-        url: `${config.API_URL}/as/route/walk?${paramsArray.join('&')}`
+        url: `${config.SERVICE_URL}/as/route/walk?${paramsArray.join('&')}`
     }
     getJSON(request, (error?: Error | null, json?: any | null) => {
         if (error) {
@@ -103,7 +103,7 @@ function driving(requestOptions: Object, callback: Function, accessToken: string
         }
     }
     let request = {
-        url: `${config.API_URL}/as/route/car?${paramsArray.join('&')}`
+        url: `${config.SERVICE_URL}/as/route/car?${paramsArray.join('&')}`
     }
     getJSON(request, (error?: Error | null, json?: any | null) => {
         if (error) {
@@ -135,7 +135,7 @@ function geocoder(requestOptions: Object, callback: Function, accessToken: strin
         }
     }
     let request = {
-        url: `${config.API_URL}/gss/geocode/v2?${paramsArray.join('&')}`
+        url: `${config.SERVICE_URL}/gss/geocode/v2?${paramsArray.join('&')}`
     }
     getJSON(request, (error?: Error | null, json?: any | null) => {
         if (error) {
@@ -167,7 +167,7 @@ function districtSearch(requestOptions: Object, callback: Function, accessToken:
         }
     }
     let request = {
-        url: `${config.API_URL}/gss/district/v2?${paramsArray.join('&')}`
+        url: `${config.SERVICE_URL}/gss/district/v2?${paramsArray.join('&')}`
     }
     getJSON(request, (error?: Error | null, json?: any | null) => {
         if (error) {

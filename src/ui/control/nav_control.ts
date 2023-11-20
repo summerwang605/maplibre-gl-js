@@ -51,7 +51,7 @@ export class NavControl {
     _compassArrow: HTMLElement;
     _handler: NavMouseRotateWrapper;
     _amapHandler: NavMouseRotateWrapper;
-    _intervalFunc: NodeJS.Timer;
+    _intervalFunc: any;
 
     constructor(options: NavOptions) {
         const this_ = this;
