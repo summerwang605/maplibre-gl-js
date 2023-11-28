@@ -35,13 +35,17 @@ function poiSearch(requestParams: {}, callback: Function, accessToken: string) {
         }
     }
     let request = {
-        url: `${config.SERVICE_URL}/as/search/poi?${paramsArray.join('&')}`
-    }
-    getJSON(request, (error?: Error | null, json?: any | null) => {
+        url: `${config.SERVICE_URL}/as/search/poi?${paramsArray.join('&')}`,
+        headers: {
+            accessToken: accessToken
+        }
+    };
+    let _apiRequest = new AbortController();
+    getJSON(request, _apiRequest).then((response) => {
+        callback(response.data);
+    }).catch((error) => {
         if (error) {
-            this.fire(new ErrorEvent(error));
-        } else if (json) {
-            callback(json);
+            console.error(new ErrorEvent(error));
         }
     });
 }
@@ -68,13 +72,17 @@ function walking(requestOptions: Object, callback: Function, accessToken: string
         }
     }
     let request = {
-        url: `${config.SERVICE_URL}/as/route/walk?${paramsArray.join('&')}`
-    }
-    getJSON(request, (error?: Error | null, json?: any | null) => {
+        url: `${config.SERVICE_URL}/as/route/walk?${paramsArray.join('&')}`,
+        headers: {
+            accessToken: accessToken
+        }
+    };
+    let _apiRequest = new AbortController();
+    getJSON(request, _apiRequest).then((response) => {
+        callback(response.data);
+    }).catch((error) => {
         if (error) {
-            this.fire(new ErrorEvent(error));
-        } else if (json) {
-            callback(json);
+            console.error(new ErrorEvent(error));
         }
     });
 }
@@ -103,13 +111,17 @@ function driving(requestOptions: Object, callback: Function, accessToken: string
         }
     }
     let request = {
-        url: `${config.SERVICE_URL}/as/route/car?${paramsArray.join('&')}`
-    }
-    getJSON(request, (error?: Error | null, json?: any | null) => {
+        url: `${config.SERVICE_URL}/as/route/car?${paramsArray.join('&')}`,
+        headers: {
+            accessToken: accessToken
+        }
+    };
+    let _apiRequest = new AbortController();
+    getJSON(request, _apiRequest).then((response) => {
+        callback(response.data);
+    }).catch((error) => {
         if (error) {
-            this.fire(new ErrorEvent(error));
-        } else if (json) {
-            callback(json);
+            console.error(new ErrorEvent(error));
         }
     });
 }
@@ -135,13 +147,17 @@ function geocoder(requestOptions: Object, callback: Function, accessToken: strin
         }
     }
     let request = {
-        url: `${config.SERVICE_URL}/gss/geocode/v2?${paramsArray.join('&')}`
-    }
-    getJSON(request, (error?: Error | null, json?: any | null) => {
+        url: `${config.SERVICE_URL}/gss/geocode/v2?${paramsArray.join('&')}`,
+        headers: {
+            accessToken: accessToken
+        }
+    };
+    let _apiRequest = new AbortController();
+    getJSON(request, _apiRequest).then((response) => {
+        callback(response.data);
+    }).catch((error) => {
         if (error) {
-            this.fire(new ErrorEvent(error));
-        } else if (json) {
-            callback(json);
+            console.error(new ErrorEvent(error));
         }
     });
 }
@@ -167,15 +183,19 @@ function districtSearch(requestOptions: Object, callback: Function, accessToken:
         }
     }
     let request = {
-        url: `${config.SERVICE_URL}/gss/district/v2?${paramsArray.join('&')}`
-    }
-    getJSON(request, (error?: Error | null, json?: any | null) => {
+        url: `${config.SERVICE_URL}/gss/district/v2?${paramsArray.join('&')}`,
+        headers: {
+            accessToken: accessToken
+        }
+    };
+    let _apiRequest = new AbortController();
+    getJSON(request, _apiRequest).then((response) => {
+        callback(response.data);
+    }).catch((error) => {
         if (error) {
-            this.fire(new ErrorEvent(error));
-        } else if (json) {
-            callback(json);
+            console.error(new ErrorEvent(error));
         }
     });
 }
 
-export {poiSearch, walking, driving, districtSearch, geocoder}
+export {poiSearch, walking, driving, districtSearch, geocoder};
