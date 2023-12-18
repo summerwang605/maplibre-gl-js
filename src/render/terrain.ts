@@ -13,7 +13,7 @@ import {Painter} from './painter';
 import {Texture} from '../render/texture';
 import type {Framebuffer} from '../gl/framebuffer';
 import Point from '@mapbox/point-geometry';
-import {MercatorCoordinate, lngFromMercatorX, mercatorXfromLng} from '../geo/mercator_coordinate';
+import {MercatorCoordinate} from '../geo/mercator_coordinate';
 import {TerrainSourceCache} from '../source/terrain_source_cache';
 import {SourceCache} from '../source/source_cache';
 import {EXTENT} from '../data/extent';
@@ -124,7 +124,7 @@ export class Terrain {
      */
     _coordsTexture: Texture;
     /**
-     * accuracy of the coords. 2 * tileSize should be enoughth.
+     * accuracy of the coords. 2 * tileSize should be enough.
      */
     _coordsTextureSize: number;
     /**
@@ -341,12 +341,28 @@ export class Terrain {
         if (!tile) return null;
         const coordsSize = this._coordsTextureSize;
         const worldSize = (1 << tile.tileID.canonical.z) * coordsSize;
-        const mercatorX = (tile.tileID.canonical.x * coordsSize + x) / worldSize;
         return new MercatorCoordinate(
-            this._allowMercatorOverflow(p, mercatorX),
+            (tile.tileID.canonical.x * coordsSize + x) / worldSize + tile.tileID.wrap,
             (tile.tileID.canonical.y * coordsSize + y) / worldSize,
             this.getElevation(tile.tileID, x, y, coordsSize)
         );
+    }
+
+    /**
+     * Reads the depth value from the depth-framebuffer at a given screen pixel
+     * @param p - Screen coordinate
+     * @returns depth value in clip space (between 0 and 1)
+     */
+
+    depthAtPoint(p: Point): number {
+        const rgba = new Uint8Array(4);
+        const context = this.painter.context, gl = context.gl;
+        context.bindFramebuffer.set(this.getFramebuffer('depth').framebuffer);
+        gl.readPixels(p.x, this.painter.height / devicePixelRatio - p.y - 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
+        context.bindFramebuffer.set(null);
+        // decode coordinates (encoding see terran_depth.fragment.glsl)
+        const depthValue = (rgba[0] / (256 * 256 * 256) + rgba[1] / (256 * 256) + rgba[2] / 256 + rgba[3]) / 256;
+        return depthValue;
     }
 
     /**
@@ -441,19 +457,5 @@ export class Terrain {
             mercatorX,
             mercatorY
         };
-    }
-
-    _allowMercatorOverflow(p: Point, mercatorX: number): number {
-        const inLeftHalf = p.x < (this.painter.width / 2);
-        let lng = lngFromMercatorX(mercatorX);
-        const centerLng = this.painter.transform.center.lng;
-        if (
-            (inLeftHalf && Math.sign(lng) > 0 && Math.sign(centerLng) < 0) ||
-            (!inLeftHalf && Math.sign(lng) < 0 && Math.sign(centerLng) > 0)
-        ) {
-            lng = 360 * Math.sign(centerLng) + lng;
-            return mercatorXfromLng(lng);
-        }
-        return mercatorX;
     }
 }

@@ -10,7 +10,6 @@ import type {Map} from '../ui/map';
 import type {Dispatcher} from '../util/dispatcher';
 import type {Tile} from './tile';
 import type {Actor} from '../util/actor';
-import type {Callback} from '../types/callback';
 import type {GeoJSONSourceSpecification, PromoteIdSpecification} from '@maplibre/maplibre-gl-style-spec';
 import type {GeoJSONSourceDiff} from './geojson_source_diff';
 import type {GeoJSONWorkerOptions, LoadGeoJSONParameters} from './geojson_worker_source';
@@ -18,6 +17,7 @@ import type {GeoJSONWorkerOptions, LoadGeoJSONParameters} from './geojson_worker
 export type GeoJSONSourceOptions = GeoJSONSourceSpecification & {
     workerOptions?: GeoJSONWorkerOptions;
     collectResourceTiming?: boolean;
+    data: GeoJSON.GeoJSON | string;
 }
 
 export type GeoJsonSourceOptions = {
@@ -255,27 +255,20 @@ export class GeoJSONSource extends Evented implements Source {
      *
      * @param clusterId - The value of the cluster's `cluster_id` property.
      * @param callback - A callback to be called when the zoom value is retrieved (`(error, zoom) => { ... }`).
-     * @returns `this`
+     * @returns a promise that is resolved with the zoom number
      */
-    getClusterExpansionZoom(clusterId: number, callback: Callback<number>): this {
-        this.actor.sendAsync({type: 'getClusterExpansionZoom', data: {type: this.type, clusterId, source: this.id}})
-            .then((v) => callback(null, v))
-            .catch((e) => callback(e));
-        return this;
+    getClusterExpansionZoom(clusterId: number): Promise<number> {
+        return this.actor.sendAsync({type: 'getClusterExpansionZoom', data: {type: this.type, clusterId, source: this.id}});
     }
 
     /**
      * For clustered sources, fetches the children of the given cluster on the next zoom level (as an array of GeoJSON features).
      *
      * @param clusterId - The value of the cluster's `cluster_id` property.
-     * @param callback - A callback to be called when the features are retrieved (`(error, features) => { ... }`).
-     * @returns `this`
+     * @returns a promise that is resolved when the features are retrieved
      */
-    getClusterChildren(clusterId: number, callback: Callback<Array<GeoJSON.Feature>>): this {
-        this.actor.sendAsync({type: 'getClusterChildren', data: {type: this.type, clusterId, source: this.id}})
-            .then((v) => callback(null, v))
-            .catch((e) => callback(e));
-        return this;
+    getClusterChildren(clusterId: number): Promise<Array<GeoJSON.Feature>> {
+        return this.actor.sendAsync({type: 'getClusterChildren', data: {type: this.type, clusterId, source: this.id}});
     }
 
     /**
@@ -284,12 +277,11 @@ export class GeoJSONSource extends Evented implements Source {
      * @param clusterId - The value of the cluster's `cluster_id` property.
      * @param limit - The maximum number of features to return.
      * @param offset - The number of features to skip (e.g. for pagination).
-     * @param callback - A callback to be called when the features are retrieved (`(error, features) => { ... }`).
-     * @returns `this`
+     * @returns a promise that is resolved when the features are retreived
      * @example
      * Retrieve cluster leaves on click
      * ```ts
-     * map.on('click', 'clusters', function(e) {
+     * map.on('click', 'clusters', (e) => {
      *   let features = map.queryRenderedFeatures(e.point, {
      *     layers: ['clusters']
      *   });
@@ -298,23 +290,20 @@ export class GeoJSONSource extends Evented implements Source {
      *   let pointCount = features[0].properties.point_count;
      *   let clusterSource = map.getSource('clusters');
      *
-     *   clusterSource.getClusterLeaves(clusterId, pointCount, 0, function(error, features) {
-     *     // Print cluster leaves in the console
-     *     console.log('Cluster leaves:', error, features);
-     *   })
+     *   const features = await clusterSource.getClusterLeaves(clusterId, pointCount) 0, function(error, features) {
+     *   // Print cluster leaves in the console
+     *   console.log('Cluster leaves:', features);
      * });
      * ```
      */
-    getClusterLeaves(clusterId: number, limit: number, offset: number, callback: Callback<Array<GeoJSON.Feature>>): this {
-        this.actor.sendAsync({type: 'getClusterLeaves', data: {
+    getClusterLeaves(clusterId: number, limit: number, offset: number): Promise<Array<GeoJSON.Feature>> {
+        return this.actor.sendAsync({type: 'getClusterLeaves', data: {
             type: this.type,
             source: this.id,
             clusterId,
             limit,
             offset
-        }}).then((l) => callback(null, l))
-            .catch((e) => callback(e));
-        return this;
+        }});
     }
 
     /**
@@ -324,7 +313,7 @@ export class GeoJSONSource extends Evented implements Source {
      * @param diff - the diff object
      */
     async _updateWorkerData(diff?: GeoJSONSourceDiff) {
-        const options: LoadGeoJSONParameters = extend({}, this.workerOptions);
+        const options: LoadGeoJSONParameters = extend({type: this.type}, this.workerOptions);
         if (diff) {
             options.dataDiff = diff;
         } else if (typeof this._data === 'string') {
@@ -333,7 +322,6 @@ export class GeoJSONSource extends Evented implements Source {
         } else {
             options.data = JSON.stringify(this._data);
         }
-        options.type = this.type;
         this._pendingLoads++;
         this.fire(new Event('dataloading', {dataType: 'source'}));
         try {

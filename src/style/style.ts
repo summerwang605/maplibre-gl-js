@@ -8,23 +8,18 @@ import {Light} from './light';
 import {LineAtlas} from '../render/line_atlas';
 import {pick, clone, extend, deepEqual, filterObject, mapObject} from '../util/util';
 import {coerceSpriteToArray} from '../util/style';
-import {getJSON, getReferrer, makeRequest} from '../util/ajax';
+import {getJSON, getReferrer} from '../util/ajax';
 import {ResourceType} from '../util/request_manager';
 import {browser} from '../util/browser';
 import {Dispatcher} from '../util/dispatcher';
 import {validateStyle, emitValidationErrors as _emitValidationErrors} from './validate_style';
-import {getSourceType, setSourceType, Source} from '../source/source';
-import type {SourceClass} from '../source/source';
+import {Source} from '../source/source';
 import {QueryRenderedFeaturesOptions, QuerySourceFeatureOptions, queryRenderedFeatures, queryRenderedSymbols, querySourceFeatures} from '../source/query_features';
 import {SourceCache} from '../source/source_cache';
 import {GeoJSONSource} from '../source/geojson_source';
 import {latest as styleSpec, derefLayers as deref, emptyStyle, diff as diffStyles, operations as diffOperations} from '@maplibre/maplibre-gl-style-spec';
 import {getGlobalWorkerPool} from '../util/global_worker_pool';
-import {
-    registerForPluginStateChange,
-    evented as rtlTextPluginEvented,
-    triggerPluginCompletionEvent
-} from '../source/rtl_text_plugin';
+import {rtlMainThreadPluginFactory} from '../source/rtl_text_plugin_main_thread';
 import {PauseablePlacement} from './pauseable_placement';
 import {ZoomHistory} from './zoom_history';
 import {CrossTileSymbolIndex} from '../symbol/cross_tile_symbol_index';
@@ -43,10 +38,8 @@ const emitValidationErrors = (evented: Evented, errors?: ReadonlyArray<{
 import type {Map} from '../ui/map';
 import type {Transform} from '../geo/transform';
 import type {StyleImage} from './style_image';
-import type {Callback} from '../types/callback';
 import type {EvaluationParameters} from './evaluation_parameters';
 import type {Placement} from '../symbol/placement';
-import type {GetResourceResponse, RequestParameters} from '../util/ajax';
 import type {
     LayerSpecification,
     FilterSpecification,
@@ -216,7 +209,6 @@ export class Style extends Evented {
     sourceCaches: {[_: string]: SourceCache};
     zoomHistory: ZoomHistory;
     _loaded: boolean;
-    _rtlTextPluginCallback: (a: any) => any;
     _changed: boolean;
     _updatedSources: {[_: string]: 'clear' | 'reload'};
     _updatedLayers: {[_: string]: true};
@@ -246,9 +238,6 @@ export class Style extends Evented {
         this.dispatcher.registerMessageHandler('getImages', (mapId, params) => {
             return this.getImages(mapId, params);
         });
-        this.dispatcher.registerMessageHandler('getResource', (mapId, params, abortController) => {
-            return this.getResource(mapId, params, abortController);
-        });
         this.imageManager = new ImageManager();
         this.imageManager.setEventedParent(this);
         this.glyphManager = new GlyphManager(map._requestManager, options.localIdeographFontFamily);
@@ -267,34 +256,7 @@ export class Style extends Evented {
         this._resetUpdates();
 
         this.dispatcher.broadcast('setReferrer', getReferrer());
-
-        const self = this;
-        this._rtlTextPluginCallback = registerForPluginStateChange((event) => {
-            const state = {
-                pluginStatus: event.pluginStatus,
-                pluginURL: event.pluginURL
-            };
-            self.dispatcher.broadcast('syncRTLPluginState', state)
-                .then((results) => {
-                    triggerPluginCompletionEvent(undefined);
-                    if (!results) {
-                        return;
-                    }
-                    const allComplete = results.every((elem) => elem);
-                    if (!allComplete) {
-                        return;
-                    }
-                    for (const id in self.sourceCaches) {
-                        const sourceType = self.sourceCaches[id].getSource().type;
-                        if (sourceType === 'vector' || sourceType === 'geojson') {
-                            // Non-vector sources don't have any symbols buckets to reload when the RTL text plugin loads
-                            // They also load more quickly, so they're more likely to have already displaying tiles
-                            // that would be unnecessarily booted by the plugin load event
-                            self.sourceCaches[id].reload(); // Should be a no-op if the plugin loads before any tiles load
-                        }
-                    }
-                }).catch((err: string) => triggerPluginCompletionEvent(err));
-        });
+        rtlMainThreadPluginFactory().on('pluginStateChange', this._rtlTextPluginStateChange);
 
         this.on('data', (event) => {
             if (event.dataType !== 'source' || event.sourceDataType !== 'metadata') {
@@ -319,6 +281,18 @@ export class Style extends Evented {
             }
         });
     }
+
+    _rtlTextPluginStateChange = () => {
+        for (const id in this.sourceCaches) {
+            const sourceType = this.sourceCaches[id].getSource().type;
+            if (sourceType === 'vector' || sourceType === 'geojson') {
+                // Non-vector sources don't have any symbols buckets to reload when the RTL text plugin loads
+                // They also load more quickly, so they're more likely to have already displaying tiles
+                // that would be unnecessarily booted by the plugin load event
+                this.sourceCaches[id].reload(); // Should be a no-op if the plugin loads before any tiles load
+            }
+        }
+    };
 
     loadURL(url: string, options: StyleSwapOptions & StyleSetterOptions = {}, previousStyle?: StyleSpecification) {
         this.fire(new Event('dataloading', {dataType: 'style'}));
@@ -1415,20 +1389,6 @@ export class Style extends Evented {
         return sourceCache ? querySourceFeatures(sourceCache, params) : [];
     }
 
-    addSourceType(name: string, SourceType: SourceClass, callback: Callback<void>) {
-        if (getSourceType(name)) {
-            return callback(new Error(`A source type called "${name}" already exists.`));
-        }
-
-        setSourceType(name, SourceType);
-
-        if (!SourceType.workerSourceURL) {
-            return callback(null, null);
-        }
-
-        this.dispatcher.broadcast('loadWorkerSource', SourceType.workerSourceURL.toString()).then(() => callback()).catch(callback);
-    }
-
     getLight() {
         return this.light.getLight();
     }
@@ -1485,7 +1445,7 @@ export class Style extends Evented {
             this._spriteRequest.abort();
             this._spriteRequest = null;
         }
-        rtlTextPluginEvented.off('pluginStateChange', this._rtlTextPluginCallback);
+        rtlMainThreadPluginFactory().off('pluginStateChange', this._rtlTextPluginStateChange);
         for (const layerId in this._layers) {
             const layer: StyleLayer = this._layers[layerId];
             layer.setEventedParent(null);
@@ -1628,10 +1588,6 @@ export class Style extends Evented {
             sourceCache.setDependencies(params.tileID.key, params.type, ['']);
         }
         return glypgs;
-    }
-
-    getResource(mapId: string | number, params: RequestParameters, abortController: AbortController): Promise<GetResourceResponse<any>> {
-        return makeRequest(params, abortController);
     }
 
     getGlyphsUrl() {

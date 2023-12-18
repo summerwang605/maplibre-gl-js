@@ -6,18 +6,13 @@ import {extend} from '../util/util';
 import {RequestManager} from '../util/request_manager';
 import {Event, Evented} from '../util/evented';
 import {RGBAImage} from '../util/image';
-import {
-    setRTLTextPlugin,
-    clearRTLTextPlugin,
-    evented as rtlTextPluginEvented
-} from '../source/rtl_text_plugin';
+import {rtlMainThreadPluginFactory} from '../source/rtl_text_plugin_main_thread';
 import {browser} from '../util/browser';
 import {OverscaledTileID} from '../source/tile_id';
 import {fakeServer, type FakeServer} from 'nise';
 
 import {EvaluationParameters} from './evaluation_parameters';
 import {LayerSpecification, GeoJSONSourceSpecification, FilterSpecification, SourceSpecification} from '@maplibre/maplibre-gl-style-spec';
-import {SourceClass} from '../source/source';
 import {GeoJSONSource} from '../source/geojson_source';
 
 function createStyleJSON(properties?) {
@@ -86,7 +81,6 @@ beforeEach(() => {
     global.fetch = null;
     server = fakeServer.create();
     mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => { });
-    clearRTLTextPlugin();
 });
 
 afterEach(() => {
@@ -95,29 +89,7 @@ afterEach(() => {
 });
 
 describe('Style', () => {
-    test('registers plugin state change listener', () => {
-        const style = new Style(getStubMap());
-        const mockStyleDispatcherBroadcast = jest.spyOn(style.dispatcher, 'broadcast');
-
-        setRTLTextPlugin('/plugin.js', undefined);
-        expect(mockStyleDispatcherBroadcast.mock.calls[0][0]).toBe('syncRTLPluginState');
-        expect(mockStyleDispatcherBroadcast.mock.calls[0][1]).toEqual({
-            pluginStatus: 'deferred',
-            pluginURL: 'http://localhost/plugin.js',
-        });
-    });
-
-    test('loads plugin immediately if already registered', done => {
-        server.respondWith('/plugin.js', 'doesn\'t matter');
-        setRTLTextPlugin('/plugin.js', (error) => {
-            expect(error).toMatch(/Cannot set the state of the rtl-text-plugin when not in the web-worker context/);
-            done();
-        });
-        server.respond();
-        new Style(getStubMap());
-    });
-
-    test('RTL plugin load reloads vector source but not raster source', done => {
+    test('RTL plugin load reloads vector source but not raster source', async() => {
         const map = getStubMap();
         const style = new Style(map);
         map.style = style;
@@ -140,31 +112,14 @@ describe('Style', () => {
             }]
         });
 
-        style.on('style.load', () => {
-            jest.spyOn(style.sourceCaches['raster'], 'reload');
-            jest.spyOn(style.sourceCaches['vector'], 'reload');
+        await style.once('style.load');
+        jest.spyOn(style.sourceCaches['raster'], 'reload');
+        jest.spyOn(style.sourceCaches['vector'], 'reload');
 
-            clearRTLTextPlugin();
-            server.respondWith('/plugin.js', 'doesn\'t matter');
-            const _broadcast = style.dispatcher.broadcast;
-            style.dispatcher.broadcast = function (type, state) {
-                if (type === 'syncRTLPluginState') {
-                    // Mock a response from four workers saying they've loaded the plugin
-                    return Promise.resolve([true, true, true, true]) as any;
-                }
-                return _broadcast(type, state);
-            };
-            setRTLTextPlugin('/plugin.js', (error) => {
-                expect(error).toBeUndefined();
-                setTimeout(() => {
-                    clearRTLTextPlugin();
-                    expect(style.sourceCaches['raster'].reload).not.toHaveBeenCalled();
-                    expect(style.sourceCaches['vector'].reload).toHaveBeenCalled();
-                    done();
-                }, 0);
-            });
-            server.respond();
-        });
+        rtlMainThreadPluginFactory().fire(new Event('pluginStateChange'));
+
+        expect(style.sourceCaches['raster'].reload).not.toHaveBeenCalled();
+        expect(style.sourceCaches['vector'].reload).toHaveBeenCalled();
     });
 });
 
@@ -640,13 +595,12 @@ describe('Style#_remove', () => {
     test('deregisters plugin listener', async () => {
         const style = new Style(getStubMap());
         style.loadJSON(createStyleJSON());
-        const mockStyleDispatcherBroadcast = jest.spyOn(style.dispatcher, 'broadcast');
+        jest.spyOn(rtlMainThreadPluginFactory(), 'off');
 
         await style.once('style.load');
         style._remove();
 
-        rtlTextPluginEvented.fire(new Event('pluginStateChange'));
-        expect(mockStyleDispatcherBroadcast).not.toHaveBeenCalledWith('syncRTLPluginState');
+        expect(rtlMainThreadPluginFactory().off).toHaveBeenCalled();
     });
 });
 
@@ -2500,52 +2454,6 @@ describe('Style#query*Features', () => {
         serializedStyle = style.serialize();
         expect(serializedStyle.layers).toHaveLength(1);
 
-    });
-});
-
-describe('Style#addSourceType', () => {
-    test('adds factory function', done => {
-        const style = new Style(getStubMap());
-        const sourceType = function () {} as any as SourceClass;
-
-        // expect no call to load worker source
-        style.dispatcher.broadcast = function (type) {
-            if (type === 'loadWorkerSource') {
-                done('test failed');
-            }
-            return Promise.resolve({} as any);
-        };
-
-        style.addSourceType('foo', sourceType, (arg1, arg2) => {
-            expect(arg1).toBeNull();
-            expect(arg2).toBeNull();
-            done();
-        });
-    });
-
-    test('triggers workers to load worker source code', done => {
-        const style = new Style(getStubMap());
-        const sourceType = function () {} as any as SourceClass;
-        sourceType.workerSourceURL = 'worker-source.js' as any as URL;
-
-        style.dispatcher.broadcast = (type, params) => {
-            if (type === 'loadWorkerSource') {
-                expect(params).toBe('worker-source.js');
-                done();
-                return Promise.resolve({} as any);
-            }
-        };
-
-        style.addSourceType('bar', sourceType, (err) => { expect(err).toBeFalsy(); });
-    });
-
-    test('refuses to add new type over existing name', done => {
-        const style = new Style(getStubMap());
-        const sourceType = function () {} as any as SourceClass;
-        style.addSourceType('canvas', sourceType, (err) => {
-            expect(err).toBeTruthy();
-            done();
-        });
     });
 });
 

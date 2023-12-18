@@ -19,16 +19,14 @@ import {LngLatBounds} from './geo/lng_lat_bounds';
 import Point from '@mapbox/point-geometry';
 import {MercatorCoordinate} from './geo/mercator_coordinate';
 import {Evented} from './util/evented';
-import {config} from './util/config';
+import {AddProtocolAction, config} from './util/config';
 import {Debug} from './util/debug';
 import {isSafari} from './util/util';
-import {setRTLTextPlugin, getRTLTextPluginStatus} from './source/rtl_text_plugin';
+import {rtlMainThreadPluginFactory} from './source/rtl_text_plugin_main_thread';
 import {WorkerPool} from './util/worker_pool';
 import {prewarm, clearPrewarmedResources} from './util/global_worker_pool';
 import {PerformanceUtils} from './util/performance';
 import {AJAXError} from './util/ajax';
-import type {RequestParameters, ResponseCallback} from './util/ajax';
-import type {Cancelable} from './types/cancelable';
 import {GeoJSONSource} from './source/geojson_source';
 import {CanvasSource} from './source/canvas_source';
 import {ImageSource} from './source/image_source';
@@ -36,7 +34,7 @@ import {RasterDEMTileSource} from './source/raster_dem_tile_source';
 import {RasterTileSource} from './source/raster_tile_source';
 import {VectorTileSource} from './source/vector_tile_source';
 import {VideoSource} from './source/video_source';
-
+import {addSourceType, type SourceClass} from './source/source';
 const version = packageJSON.version;
 
 export type * from '@maplibre/maplibre-gl-style-spec';
@@ -79,7 +77,6 @@ class MapLibreGL {
      * Necessary for supporting the Arabic and Hebrew languages, which are written right-to-left.
      *
      * @param pluginURL - URL pointing to the Mapbox RTL text plugin source.
-     * @param callback - Called with an error argument if there is an error.
      * @param lazy - If set to `true`, mapboxgl will defer loading the plugin until rtl text is encountered,
      * rtl text will then be rendered only after the plugin finishes loading.
      * @example
@@ -88,7 +85,7 @@ class MapLibreGL {
      * ```
      * @see [Add support for right-to-left scripts](https://maplibre.org/maplibre-gl-js/docs/examples/mapbox-gl-rtl-text/)
      */
-    static setRTLTextPlugin = setRTLTextPlugin;
+    static setRTLTextPlugin = (pluginURL: string, lazy: boolean) => rtlMainThreadPluginFactory().setRTLTextPlugin(pluginURL, lazy);
     /**
      * Gets the map's [RTL text plugin](https://www.mapbox.com/mapbox-gl-js/plugins/#mapbox-gl-rtl-text) status.
      * The status can be `unavailable` (i.e. not requested or removed), `loading`, `loaded` or `error`.
@@ -99,7 +96,7 @@ class MapLibreGL {
      * const pluginStatus = maplibregl.getRTLTextPluginStatus();
      * ```
      */
-    static getRTLTextPluginStatus = getRTLTextPluginStatus;
+    static getRTLTextPluginStatus = () => rtlMainThreadPluginFactory().getRTLTextPluginStatus();
     /**
      * Initializes resources like WebWorkers that can be shared across maps to lower load
      * times in some situations. `maplibregl.workerUrl` and `maplibregl.workerCount`, if being
@@ -236,30 +233,22 @@ class MapLibreGL {
      * @example
      * This will fetch a file using the fetch API (this is obviously a non interesting example...)
      * ```ts
-     * maplibregl.addProtocol('custom', (params, callback) => {
-            fetch(`https://${params.url.split("://")[1]}`)
-                .then(t => {
-                    if (t.status == 200) {
-                        t.arrayBuffer().then(arr => {
-                            callback(null, arr, null, null);
-                        });
-                    } else {
-                        callback(new Error(`Tile fetch error: ${t.statusText}`));
-                    }
-                })
-                .catch(e => {
-                    callback(new Error(e));
-                });
-            return { cancel: () => { } };
+     * maplibregl.addProtocol('custom', async (params, abortController) => {
+            const t = await fetch(`https://${params.url.split("://")[1]}`);
+            if (t.status == 200) {
+                const buffer = await t.arrayBuffer();
+                return {data: buffer}
+            } else {
+                throw new Error(`Tile fetch error: ${t.statusText}`));
+            }
         });
      * // the following is an example of a way to return an error when trying to load a tile
-     * maplibregl.addProtocol('custom2', (params, callback) => {
-     *      callback(new Error('someErrorMessage'));
-     *      return { cancel: () => { } };
+     * maplibregl.addProtocol('custom2', async (params, abortController) => {
+     *      throw new Error('someErrorMessage'));
      * });
      * ```
      */
-    static addProtocol(customProtocol: string, loadFn: (requestParameters: RequestParameters, callback: ResponseCallback<any>) => Cancelable) {
+    static addProtocol(customProtocol: string, loadFn: AddProtocolAction) {
         config.REGISTERED_PROTOCOLS[customProtocol] = loadFn;
     }
 
@@ -275,6 +264,15 @@ class MapLibreGL {
     static removeProtocol(customProtocol: string) {
         delete config.REGISTERED_PROTOCOLS[customProtocol];
     }
+
+    /**
+     * Adds a [custom source type](#Custom Sources), making it available for use with
+     * {@link Map#addSource}.
+     * @param name - The name of the source type; source definition objects use this name in the `{type: ...}` field.
+     * @param SourceType - A {@link SourceClass} - which is a constructor for the {@link Source} interface.
+     * @returns a promise that is resolved when the source type is ready or with an error argument if there is an error.
+     */
+    static addSourceType = (name: string, sourceType: SourceClass) => addSourceType(name, sourceType);
 }
 
 //This gets automatically stripped out in production builds.
