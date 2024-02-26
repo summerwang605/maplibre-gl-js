@@ -269,7 +269,7 @@ export class NavControl {
         return a;
     }
 
-    _setButtonTitle(button: HTMLElement, title: string) {
+    _setButtonTitle(button: HTMLButtonElement, title: 'ZoomIn' | 'ZoomOut' | 'ResetBearing') {
         const str = this._map._getUIString(`NavControl.${title}`);
         button.title = str;
         button.setAttribute('aria-label', str);

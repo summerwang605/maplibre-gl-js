@@ -57,9 +57,6 @@ import type {
 } from '@maplibre/maplibre-gl-style-spec';
 import type {MapGeoJSONFeature} from '../util/vectortile_to_geojson';
 import {districtSearch, driving, geocoder, poiSearch, walking} from '../util/msp_api/msp_api';
-import {Terrain} from '../render/terrain';
-import {RenderToTexture} from '../render/render_to_texture';
-import {config} from '../util/config';
 import type {ControlPosition, IControl} from './control/control';
 import type {QueryRenderedFeaturesOptions, QuerySourceFeatureOptions} from '../source/query_features';
 
@@ -2404,7 +2401,8 @@ export class Map extends Camera {
             refresh: 120 * 1000, // 刷新时间,默认2分钟
             before: '',   //所在**图层之前
             layerid: 'layer-traffic-amap',
-            animation: false
+            animation: false,
+            source: null,
         }, optionsObj);
         //设置全局layerid
         this._trafficLayerId = options.layerid;
@@ -2438,11 +2436,11 @@ export class Map extends Camera {
             if (!this.getSource(this._trafficLayerId) && !this.getLayer(this._trafficLayerId)) {
                 if (options.type === 'vector') {
                     //定义路况图层属性
-                    const trafficLayerStyle = {
+                    let trafficLayerStyle = {
                         "id": this._trafficLayerId,
                         "type": "line",
                         "metadata": {},
-                        "source": typeof options.source !== 'undefined' ? options.source : config.TRAFFIC_SOURCE.vector,
+                        "source": options.source || config.TRAFFIC_SOURCE.vector,
                         "source-layer": "vectortraffic",
                         "minzoom": options.minzoom,
                         "maxzoom": options.maxzoom,
@@ -2513,10 +2511,10 @@ export class Map extends Camera {
                         }
                     };
                     //添加路况图层
-                    this.addLayer(extend({}, trafficLayerStyle), options.before);
+                    this.addLayer(trafficLayerStyle as AddLayerObject, options.before);
                     this._intervalFunc = setInterval(() => {
                         _this.removeLayerAndSource(_this._trafficLayerId);
-                        _this.addLayer(extend({}, trafficLayerStyle), options.before);
+                        _this.addLayer(trafficLayerStyle as AddLayerObject, options.before);
                     }, options.refresh);
 
                     //矢量路况设置流动效果
@@ -2557,13 +2555,15 @@ export class Map extends Camera {
                     const trafficLayerStyle = {
                         "id": this._trafficLayerId,
                         "type": "raster",
-                        "source": typeof options.source !== 'undefined' ? options.source : config.TRAFFIC_SOURCE.raster
+                        "source": options.source  || config.TRAFFIC_SOURCE.raster
                     };
-                    trafficLayerStyle.source.tileSize = Number(trafficLayerStyle.source.tileSize);
-                    this.addLayer(extend({}, trafficLayerStyle), options.before);
+                    if( typeof trafficLayerStyle.source.tileSize != 'undefined'){
+                        trafficLayerStyle.source.tileSize = Number(trafficLayerStyle.source.tileSize);
+                    }
+                    this.addLayer(trafficLayerStyle as AddLayerObject, options.before);
                     this._intervalFunc = setInterval(() => {
                         _this.removeLayerAndSource(_this._trafficLayerId);
-                        _this.addLayer(extend({}, trafficLayerStyle), options.before);
+                        _this.addLayer(trafficLayerStyle as AddLayerObject, options.before);
                     }, options.refresh);
                 }
             }
