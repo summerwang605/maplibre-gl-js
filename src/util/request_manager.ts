@@ -38,6 +38,9 @@ export class RequestManager {
         this._transformRequestFn = transformRequestFn;
         this._customAccessToken = accessToken;
         this.transformRequestFnCustom = mspTransformRequestFunc;
+       // console.log('mspTransformRequestFunc', mspTransformRequestFunc);
+       // console.log('transformRequestFn', transformRequestFn);
+       // console.log('accessToken', accessToken);
     }
 
     transformRequest(url: string, type: ResourceType) {
@@ -105,7 +108,9 @@ function makeAPIURL(urlObj: UrlObject, accessToken?: string | null | void): stri
 
     if (!config.REQUIRE_ACCESS_TOKEN) return formatUrl(urlObj);
 
-    accessToken = accessToken || config.ACCESS_TOKEN;
+    console.log('config', config);
+
+    accessToken = accessToken || config.ACCESS_TOKEN || config.accessToken;
 
     urlObj.params = urlObj.params.filter((d) => d.indexOf('access_token') === -1);
     urlObj.params.push(`access_token=${accessToken || ''}`);
@@ -153,7 +158,7 @@ const mspTransformRequestFunc: RequestTransformFunctionCustom = (url: string, re
             urlObject.params.push(`sourceType=http`);
             urlObject.authority = config.API_URL;
             urlObject.path = '/webglapi/styles';
-            resultRequest.url = makeAPIURL(urlObject);//`${config.API_URL}/webglapi/styles?n=${url}&addSource=true&sourceType=http&ak=${config.ACCESS_TOKEN}`;
+            resultRequest.url = makeAPIURL(urlObject, accessToken);//`${config.API_URL}/webglapi/styles?n=${url}&addSource=true&sourceType=http&ak=${config.ACCESS_TOKEN}`;
         }
     }
     /**
@@ -174,7 +179,7 @@ const mspTransformRequestFunc: RequestTransformFunctionCustom = (url: string, re
             urlObject.params.push(`e=${spriteFileType}`);
             urlObject.authority = config.API_URL;
             urlObject.path = '/webglapi/sprite';
-            resultRequest.url = makeAPIURL(urlObject);//http://121.36.99.212:35001/webglapi/sprite?n=mapabcjt@2x&e=json&ak=ec85d3648154874552835438ac6a02b2
+            resultRequest.url = makeAPIURL(urlObject, accessToken);//http://121.36.99.212:35001/webglapi/sprite?n=mapabcjt@2x&e=json&ak=ec85d3648154874552835438ac6a02b2
         }
     }
 
@@ -194,7 +199,7 @@ const mspTransformRequestFunc: RequestTransformFunctionCustom = (url: string, re
             urlObject.params.push(`r=${range}`);
             urlObject.authority = config.API_URL;
             urlObject.path = '/webglapi/fonts';
-            resultRequest.url = makeAPIURL(urlObject); // Request URL: http://121.36.99.212:35001/webglapi/fonts?n=sourcehansanscn-normal&r=0-255&ak=ec85d3648154874552835438ac6a02b2
+            resultRequest.url = makeAPIURL(urlObject, accessToken); // Request URL: http://121.36.99.212:35001/webglapi/fonts?n=sourcehansanscn-normal&r=0-255&ak=ec85d3648154874552835438ac6a02b2
         }
     }
 

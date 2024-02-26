@@ -30,6 +30,7 @@ type Config = {
     TILE_URL_VERSION: string,
     RASTER_URL_PREFIX: string,
     ACCESS_TOKEN: string,
+    accessToken: string,
     TRAFFIC_SOURCE: { raster: Object, vector: Object },
     TRAFFIC_SOURCE_: { raster: Object, vector: Object },
     MAX_PARALLEL_IMAGE_REQUESTS: number;
@@ -133,6 +134,7 @@ export const config: Config = {
     RASTER_URL_PREFIX: 'raster/v1',
     REQUIRE_ACCESS_TOKEN: true,
     ACCESS_TOKEN: null,
+    accessToken: null,
     TRAFFIC_SOURCE: null,
     WORKER_URL: ''
 };

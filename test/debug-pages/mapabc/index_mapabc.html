@@ -26,6 +26,7 @@
 <script>
 
     mapabcgl.accessToken = 'ec85d3648154874552835438ac6a02b2';
+    mapabcgl.config.accessToken = 'ec85d3648154874552835438ac6a02b2';
     var map = window.map = new mapabcgl.Map({
         container: 'map',
         center: [116.2569, 39.9232],
@@ -36,7 +37,7 @@
        // style: 'http://192.168.124.3:8000/js/mapabc22125.json',
         style: 'http://localhost:9966/test/debug-pages/mapabc/mapabc80.json',
         hash: true,
-       // accessToken: 'ec85d3648154874552835438ac6a02b2' //map options
+        accessToken: 'ec85d3648154874552835438ac6a02b2' //map options
     });
 
     map.on('load', function () {

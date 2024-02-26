@@ -1,6 +1,7 @@
 import packageJSON from '../package.json' assert {type: 'json'};
 import {Map} from './ui/map';
 import {NavigationControl} from './ui/control/navigation_control';
+import {NavControl} from './ui/control/nav_control';
 import {GeolocateControl} from './ui/control/geolocate_control';
 import {AttributionControl} from './ui/control/attribution_control';
 import {LogoControl} from './ui/control/logo_control';
@@ -168,6 +169,7 @@ function importScriptInWorkers(workerUrl: string) { return getGlobalDispatcher()
 export {
     Map,
     NavigationControl,
+    NavControl,
     GeolocateControl,
     AttributionControl,
     LogoControl,
