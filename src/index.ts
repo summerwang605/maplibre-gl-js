@@ -1,5 +1,6 @@
 import packageJSON from '../package.json' assert {type: 'json'};
 import {Map} from './ui/map';
+import {supported} from '@mapbox/mapbox-gl-supported';
 import {NavigationControl} from './ui/control/navigation_control';
 import {NavControl} from './ui/control/nav_control';
 import {GeolocateControl} from './ui/control/geolocate_control';
@@ -274,4 +275,5 @@ export {
     getBaseApiUrl,
     setAccessToken,
     getAccessToken,
+    supported
 };
