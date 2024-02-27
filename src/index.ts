@@ -164,7 +164,33 @@ function setWorkerUrl(value: string) { config.WORKER_URL = value; }
  * importScriptInWorkers('add-protocol-worker.js');
  * ```
  */
+
 function importScriptInWorkers(workerUrl: string) { return getGlobalDispatcher().broadcast('importScript', workerUrl); }
+
+/**
+ * 使用 .setAccessToken(token) 方法设置地图访问key
+ * 使用 .getAccessToken() 方法可取到设置的地图服务访问key
+ */
+function getAccessToken(): string {
+    return config.ACCESS_TOKEN;
+}
+
+function setAccessToken(token: string) {
+    config.ACCESS_TOKEN = token;
+}
+
+/**
+ * 使用 .setBaseApiUrl(url) 方法设置地图服务根URL
+ * 使用 .getBaseApiUrl() 方法可取到设置的地图服务根URL
+ */
+function getBaseApiUrl(): string {
+    return config.API_URL;
+}
+
+function setBaseApiUrl(url: string) {
+    config.API_URL = url;
+}
+
 
 export {
     Map,
@@ -243,5 +269,9 @@ export {
     addProtocol,
     removeProtocol,
     addSourceType,
-    importScriptInWorkers
+    importScriptInWorkers,
+    setBaseApiUrl,
+    getBaseApiUrl,
+    setAccessToken,
+    getAccessToken,
 };

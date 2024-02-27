@@ -50,7 +50,7 @@
         return res;
     });
 
-    mapabcgl.accessToken = 'ec85d3648154874552835438ac6a02b2';
+    mapabcgl.setAccessToken('ec85d3648154874552835438ac6a02b2');
     var map = window.map = new mapabcgl.Map({
         container: 'map',
         center: [116.2569, 39.9232],
@@ -58,7 +58,7 @@
         //style: 'mapabc79w.json',
         style: 'mapabc://styles/mapabc79w',
         hash: true,
-        accessToken: 'ec85d3648154874552835438ac6a02b2' //map options
+        // accessToken: 'ec85d3648154874552835438ac6a02b2' //map options
     });
 
     map.on('load', function () {

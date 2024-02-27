@@ -391,6 +391,9 @@ const defaultOptions = {
     fadeDuration: 300,
     crossSourceCollisions: true,
     validateStyle: true,
+    /**
+     * 地图服务访问token
+     */
     accessToken: '',
     /**Because GL MAX_TEXTURE_SIZE is usually at least 4096px. */
     maxCanvasSize: [4096, 4096]
@@ -483,10 +486,7 @@ export class Map extends Camera {
     _trafficLayerId: any;
     _intervalFunc: any;
     _intervalFuncTraffic: any;
-    /**
-     * 地图服务访问token
-     */
-    accessToken: string;
+
     _overridePixelRatio: number | null;
     _maxCanvasSize: [number, number];
     _terrainDataCallback: (e: MapStyleDataEvent | MapSourceDataEvent) => void;
@@ -595,7 +595,8 @@ export class Map extends Camera {
         this._locale = extend({}, defaultLocale, options.locale);
         this._clickTolerance = options.clickTolerance;
         this._pixelRatio = options.pixelRatio ?? devicePixelRatio;
-        this._requestManager = new RequestManager(options.transformRequest, options.accessToken);
+        const accessToken = options.accessToken || this.getAccessToken();
+        this._requestManager = new RequestManager(options.transformRequest, accessToken);
         this._overridePixelRatio = options.pixelRatio;
         this._maxCanvasSize = options.maxCanvasSize;
         this.transformCameraUpdate = options.transformCameraUpdate;
@@ -3233,7 +3234,7 @@ export class Map extends Camera {
     }
 
     getAccessToken(): string{
-        return this.accessToken || config.ACCESS_TOKEN;
+        return config.ACCESS_TOKEN || config.accessToken;
     }
 
     _containerDimensions() {
