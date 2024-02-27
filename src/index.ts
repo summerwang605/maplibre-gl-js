@@ -275,5 +275,5 @@ export {
     getBaseApiUrl,
     setAccessToken,
     getAccessToken,
-    supported
+    supported,
 };

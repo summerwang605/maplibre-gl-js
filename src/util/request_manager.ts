@@ -108,8 +108,6 @@ function makeAPIURL(urlObj: UrlObject, accessToken?: string | null | void): stri
 
     if (!config.REQUIRE_ACCESS_TOKEN) return formatUrl(urlObj);
 
-    console.log('config', config);
-
     accessToken = accessToken || config.ACCESS_TOKEN || config.accessToken;
 
     urlObj.params = urlObj.params.filter((d) => d.indexOf('access_token') === -1);
@@ -229,7 +227,7 @@ const mspTransformRequestFunc: RequestTransformFunctionCustom = (url: string, re
     }
 
     if (resourceType === 'Source' && url.indexOf('http://myHost') > -1) {
-        console.log('request Source url - > ', url);
+        //console.log('request Source url - > ', url);
         return {
             url: url.replace('http', 'https'),
             headers: {'my-custom-header': true},
