@@ -149,7 +149,12 @@ export class Marker extends Evented {
      */
     constructor(options?: MarkerOptions) {
         super();
-
+        
+        if (options instanceof HTMLElement) {
+            options = {
+                element: options
+            };
+        }
         this._anchor = options && options.anchor || 'center';
         this._color = options && options.color || '#3FB1CE';
         this._scale = options && options.scale || 1;
@@ -295,6 +300,7 @@ export class Marker extends Evented {
 
         this._popup = null;
     }
+
 
     /**
      * Attaches the `Marker` to a `Map` object.
