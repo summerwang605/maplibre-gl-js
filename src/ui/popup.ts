@@ -34,6 +34,9 @@ export type Offset = number | PointLike | {
     [_ in PositionAnchor]: PointLike;
 };
 
+/**
+ * The {@link Popup} options object
+ */
 export type PopupOptions = {
     /**
      * If `true`, a close button will appear in the top right corner of the popup.
@@ -167,6 +170,9 @@ export class Popup extends Evented {
     _pos: Point;
     _flatPos: Point;
 
+    /**
+     * @param options - the options
+     */
     constructor(options?: PopupOptions) {
         super();
         this.options = extend(Object.create(defaultOptions), options);
@@ -258,9 +264,8 @@ export class Popup extends Evented {
             this._map.off('drag', this._onDrag);
             this._map._canvasContainer.classList.remove('maplibregl-track-pointer');
             delete this._map;
+            this.fire(new Event('close'));
         }
-
-        this.fire(new Event('close'));
 
         return this;
     };
@@ -596,6 +601,8 @@ export class Popup extends Evented {
 
         if (this._map.transform.renderWorldCopies && !this._trackPointer) {
             this._lngLat = smartWrap(this._lngLat, this._flatPos, this._map.transform);
+        } else {
+            this._lngLat = this._lngLat?.wrap();
         }
 
         if (this._trackPointer && !cursor) return;
