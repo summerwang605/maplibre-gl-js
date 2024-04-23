@@ -49,6 +49,7 @@ import {KeyboardHandler} from './ui/handler/keyboard';
 import {TwoFingersTouchPitchHandler, TwoFingersTouchRotateHandler, TwoFingersTouchZoomHandler} from './ui/handler/two_fingers_touch';
 import {MessageType} from './util/actor_messages';
 const version = packageJSON.version;
+let accessToken = config.ACCESS_TOKEN;
 
 export type * from '@maplibre/maplibre-gl-style-spec';
 
@@ -197,6 +198,7 @@ function setBaseApiUrl(url: string) {
 }
 
 
+
 export {
     Map,
     NavigationControl,
@@ -217,7 +219,6 @@ export {
     MercatorCoordinate,
     Evented,
     AJAXError,
-    config,
     CanvasSource,
     GeoJSONSource,
     ImageSource,
@@ -280,4 +281,7 @@ export {
     setAccessToken,
     getAccessToken,
     supported,
+    version,
+    config,
+    accessToken
 };
