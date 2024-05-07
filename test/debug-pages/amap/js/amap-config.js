@@ -29,4 +29,5 @@ amapgl.config.REPORT_MAP_SESSION = true;
 
 amapgl.config.DEBUG = true;
 amapgl.accessToken = 'pk.eyJ1IjoiY2FpcGVpeXVhbiIsImEiOiJjamZ0aDY4YjIwOG5zMzBsNmdwbnFjbHg3In0.p9Mnm9HmZvc8zSFzE4peQw';
+amapgl.config.accessToken = 'pk.eyJ1IjoiY2FpcGVpeXVhbiIsImEiOiJjamZ0aDY4YjIwOG5zMzBsNmdwbnFjbHg3In0.p9Mnm9HmZvc8zSFzE4peQw';
 console.log(amapgl.config);

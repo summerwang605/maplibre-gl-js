@@ -239,7 +239,7 @@ const mspTransformRequestFunc: RequestTransformFunctionCustom = (url: string, re
 };
 
 function isMapboxURL(url: string) {
-    return url.indexOf('mapbox:') === 0 || url.indexOf('mapabc:') === 0;
+    return url.indexOf('mapbox:') === 0 || url.indexOf('mapabc:') === 0 || url.indexOf('amap:') === 0;
 }
 
 function isHttpURL(url: string) {
