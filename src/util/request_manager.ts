@@ -15,19 +15,19 @@ export const enum ResourceType {
     Unknown = 'Unknown',
 }
 
-/**
- * This function is used to tranform a request.
- * It is used just before executing the relevant request.
- */
-export type RequestTransformFunction = (url: string, resourceType?: ResourceType) => RequestParameters | undefined;
-export type RequestTransformFunctionCustom = (url: string, resourceType?: ResourceType, accessToken?: string | null | void) => RequestParameters;
-
 type UrlObject = {
     protocol: string;
     authority: string;
     path: string;
     params: Array<string>;
 };
+
+/**
+ * This function is used to tranform a request.
+ * It is used just before executing the relevant request.
+ */
+export type RequestTransformFunction = (url: string, resourceType?: ResourceType) => RequestParameters | undefined;
+export type RequestTransformFunctionCustom = (url: string, resourceType?: ResourceType, accessToken?: string | null | void) => RequestParameters;
 
 export class RequestManager {
     _transformRequestFn: RequestTransformFunction;
