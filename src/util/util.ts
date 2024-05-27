@@ -5,6 +5,26 @@ import type {Size} from './image';
 import type {WorkerGlobalScopeInterface} from './web_worker';
 
 /**
+ * For a given collection of 2D points, returns their axis-aligned bounding box,
+ * in the format [minX, minY, maxX, maxY].
+ */
+export function getAABB(points: Array<Point>): [number, number, number, number] {
+    let tlX = Infinity;
+    let tlY = Infinity;
+    let brX = -Infinity;
+    let brY = -Infinity;
+
+    for (const p of points) {
+        tlX = Math.min(tlX, p.x);
+        tlY = Math.min(tlY, p.y);
+        brX = Math.max(brX, p.x);
+        brY = Math.max(brY, p.y);
+    }
+
+    return [tlX, tlY, brX, brY];
+}
+
+/**
  * Given a value `t` that varies between 0 and 1, return
  * an interpolation function that eases between 0 and 1 in a pleasing
  * cubic in-out fashion.
@@ -662,3 +682,45 @@ export function subscribe(target: Subscriber, message: keyof WindowEventMap, lis
 export function degreesToRadians(degrees: number): number {
     return degrees * Math.PI / 180;
 }
+
+/**
+ * Makes optional keys required and add the the undefined type.
+ *
+ * ```
+ * interface Test {
+ *  foo: number;
+ *  bar?: number;
+ *  baz: number | undefined;
+ * }
+ *
+ * Complete<Test> {
+ *  foo: number;
+ *  bar: number | undefined;
+ *  baz: number | undefined;
+ * }
+ *
+ * ```
+ *
+ * See https://medium.com/terria/typescript-transforming-optional-properties-to-required-properties-that-may-be-undefined-7482cb4e1585
+ */
+
+export type Complete<T> = {
+    [P in keyof Required<T>]: Pick<T, P> extends Required<Pick<T, P>> ? T[P] : (T[P] | undefined);
+}
+
+export type TileJSON = {
+    tilejson: '2.2.0' | '2.1.0' | '2.0.1' | '2.0.0' | '1.0.0';
+    name?: string;
+    description?: string;
+    version?: string;
+    attribution?: string;
+    template?: string;
+    tiles: Array<string>;
+    grids?: Array<string>;
+    data?: Array<string>;
+    minzoom?: number;
+    maxzoom?: number;
+    bounds?: [number, number, number, number];
+    center?: [number, number, number];
+    vector_layers: [{id: string}]; // this is partial but enough for what we need
+};
