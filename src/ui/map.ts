@@ -380,15 +380,6 @@ const defaultOptions: Readonly<Partial<MapOptions>> = {
     touchPitch: true,
     cooperativeGestures: false,
 
-    bearingSnap: 7,
-    clickTolerance: 3,
-    pitchWithRotate: true,
-
-    hash: false,
-    attributionControl: defaultAtributionControlOptions,
-    maplibreLogo: false,
-    failIfMajorPerformanceCaveat: false,
-    preserveDrawingBuffer: false,
     trackResize: true,
 
     center: [0, 0],
