@@ -16,6 +16,7 @@ let forReplaceOption = {
     'MapLibre': 'MapAbc',
     'maplibre': 'mapabc',
     'mapboxGlSupported': 'mapabcGlSupported',
+    'mapboxHTTPURLRegex': 'mapabcHTTPURLRegex',
     'mapboxgl': 'mapabcgl',
     'mapbox-gl': 'mapabc-gl',
     'mapbox': 'mapabc',
