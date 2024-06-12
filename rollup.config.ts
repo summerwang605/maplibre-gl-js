@@ -18,10 +18,10 @@ const production = BUILD === 'production';
  */
 let nameSpace = 'maplibre';
 if (EXPORTNAMESPACE == undefined) {
-    console.log("未指定 EXPORTNAMESPACE 参数 使用默认参数 maplibre")
+    console.log("未指定 EXPORTNAMESPACE 参数 使用默认参数 maplibre");
 } else {
     nameSpace = EXPORTNAMESPACE;
-    console.log("指定 EXPORTNAMESPACE 参数 打包命名空间名称为 -> " + nameSpace)
+    console.log("指定 EXPORTNAMESPACE 参数 打包命名空间名称为 -> " + nameSpace);
 
 }
 // 是否打包成mapabcgl命名空间
@@ -86,11 +86,12 @@ function getReplaceOptionByNameSpace(nameSpace: string) {
             'MapLibre': 'MapAbc',
             'maplibre': 'mapabc',
             'mapboxGlSupported': 'mapabcGlSupported',
+            'mapboxHTTPURLRegex': 'mapabcHTTPURLRegex',
             'mapboxgl': 'mapabcgl',
             'mapbox-gl': 'mapabc-gl',
             'mapbox': 'mapabc',
             'Mapbox': 'MapAbc',
-        }
+        };
     } else if (nameSpace == 'amap') {
         forReplaceOption = {
             'https://maplibre.org/maplibre-gl-js-docs': 'https://www.amap.com/amap-gl-js-docs',
@@ -103,6 +104,7 @@ function getReplaceOptionByNameSpace(nameSpace: string) {
             'MapLibre': 'Amap',
             'maplibre': 'amap',
             'mapboxGlSupported': 'amapGlSupported',
+            'mapboxHTTPURLRegex': 'amapHTTPURLRegex',
             'mapboxgl': 'amapgl',
             'mapbox-gl': 'amap-gl',
             'mapbox': 'amap',
@@ -110,7 +112,7 @@ function getReplaceOptionByNameSpace(nameSpace: string) {
             'mapabcgl': 'amapgl',
             'mapabc': 'amap',
             'MapAbc': 'Amap',
-        }
+        };
     } else if (nameSpace == 'topsmap') {
         forReplaceOption = {
             'https://maplibre.org/maplibre-gl-js-docs': 'https://www.topsmap.com/topsmap-gl-js-docs',
@@ -123,6 +125,7 @@ function getReplaceOptionByNameSpace(nameSpace: string) {
             'MapLibre': 'Topsmap',
             'maplibre': 'topsmap',
             'mapboxGlSupported': 'topsmapGlSupported',
+            'mapboxHTTPURLRegex': 'topsmapHTTPURLRegex',
             'mapboxgl': 'topsmapgl',
             'mapbox-gl': 'topsmap-gl',
             'mapbox': 'topsmap',
@@ -130,9 +133,9 @@ function getReplaceOptionByNameSpace(nameSpace: string) {
             'mapabcgl': 'topsmapgl',
             'mapabc': 'topsmap',
             'MapAbc': 'Topsmap',
-        }
+        };
     } else {
-        forReplaceOption = {}
+        forReplaceOption = {};
     }
 
     return forReplaceOption;
@@ -151,8 +154,8 @@ if (nameSpace != 'maplibre') {
      * 源字符串 -> 目标字符串
      */
     pluginsForRollup2.push(replace({
-        preventAssignment: true,
-        __buildDate__: () => JSON.stringify(new Date()),
+        preventAssignment: false,
+        sourceMap: true,
         delimiters: ['', ''],
         values: forReplaceOption
     }));

@@ -116,8 +116,8 @@ function makeAPIURL(urlObj: UrlObject, accessToken?: string | null | void): stri
 
     accessToken = accessToken || config.ACCESS_TOKEN;
 
-    urlObj.params = urlObj.params.filter((d) => d.indexOf('access_token') === -1);
-    urlObj.params.push(`access_token=${accessToken || ''}`);
+    urlObj.params = urlObj.params.filter((d) => d.indexOf('access_token') === -1 && d.indexOf('ak') === -1);
+    // urlObj.params.push(`access_token=${accessToken || ''}`);
     urlObj.params.push(`ak=${accessToken || ''}`);
     return formatUrl(urlObj);
 }

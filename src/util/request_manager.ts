@@ -36,7 +36,7 @@ export class RequestManager {
 
     constructor(transformRequestFn?: RequestTransformFunction, accessToken?: string) {
         this._transformRequestFn = transformRequestFn;
-        this._customAccessToken = accessToken;
+        this._customAccessToken = accessToken || config.ACCESS_TOKEN || config.accessToken;
         this.transformRequestFnCustom = mspTransformRequestFunc;
        // console.log('mspTransformRequestFunc', mspTransformRequestFunc);
        // console.log('transformRequestFn', transformRequestFn);
@@ -110,8 +110,8 @@ function makeAPIURL(urlObj: UrlObject, accessToken?: string | null | void): stri
 
     accessToken = accessToken || config.ACCESS_TOKEN || config.accessToken;
 
-    urlObj.params = urlObj.params.filter((d) => d.indexOf('access_token') === -1);
-    urlObj.params.push(`access_token=${accessToken || ''}`);
+    urlObj.params = urlObj.params.filter((d) => d.indexOf('access_token') === -1 && d.indexOf('ak') === -1);
+    //urlObj.params.push(`access_token=${accessToken || ''}`);
     urlObj.params.push(`ak=${accessToken || ''}`);
     return formatUrl(urlObj);
 }
@@ -215,7 +215,7 @@ const mspTransformRequestFunc: RequestTransformFunctionCustom = (url: string, re
                 resultRequest.url = formatUrl(urlObject);
             } else {
                 accessToken = accessToken || config.ACCESS_TOKEN;
-                urlObject.params.push(`access_token=${accessToken || ''}`);
+                //urlObject.params.push(`access_token=${accessToken || ''}`);
                 urlObject.params.push(`ak=${accessToken || ''}`);
                 resultRequest.url = formatUrl(urlObject);
             }
