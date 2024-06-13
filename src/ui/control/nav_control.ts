@@ -95,7 +95,7 @@ export class NavControl {
                     if (this_._map.getPitch() == 60) {
                         clearInterval(this_._intervalFunc);
                     } else {
-                        this_._map.easeTo({pitch: this_._map.getPitch() + 5, duration: 100, animate: true})
+                        this_._map.easeTo({pitch: this_._map.getPitch() + 5, duration: 100, animate: true});
                     }
                 }, 50);
             });
@@ -113,7 +113,7 @@ export class NavControl {
                     if (this_._map.getPitch() == 0) {
                         clearInterval(this_._intervalFunc);
                     } else {
-                        this_._map.easeTo({pitch: this_._map.getPitch() - 5, duration: 100, animate: true})
+                        this_._map.easeTo({pitch: this_._map.getPitch() - 5, duration: 100, animate: true});
                     }
                 }, 50);
             });
@@ -128,7 +128,7 @@ export class NavControl {
             this._amapRotateLeft = DOM.create('div', 'amap-rotateLeft', this._amapLuopan);
             this._amapRotateLeft.addEventListener('mousedown', function (ev) {
                 this_._intervalFunc = setInterval(function () {
-                    this_._map.easeTo({bearing: this_._map.getBearing() + 10, duration: 100, animate: true})
+                    this_._map.easeTo({bearing: this_._map.getBearing() + 10, duration: 100, animate: true});
                 }, 50);
             });
             this._amapRotateLeft.addEventListener('mouseup', function (ev) {
@@ -142,7 +142,7 @@ export class NavControl {
             this._amapRotateRight = DOM.create('div', 'amap-rotateRight', this._amapLuopan);
             this._amapRotateRight.addEventListener('mousedown', function (ev) {
                 this_._intervalFunc = setInterval(function () {
-                    this_._map.easeTo({bearing: this_._map.getBearing() - 10, duration: 100, animate: true})
+                    this_._map.easeTo({bearing: this_._map.getBearing() - 10, duration: 100, animate: true});
                 }, 50);
             });
             this._amapRotateRight.addEventListener('mouseup', function (ev) {
@@ -220,31 +220,39 @@ export class NavControl {
      */
     _calcContainerStyle() {
         if (this.options.position == 'bottom-right') {
-            this._amapControlbar.style.right = '-16px';
-            this._amapControlbar.style.bottom = '-32px';
+            if (this.options.showCompass) {
+                this._amapControlbar.style.right = '-16px';
+                this._amapControlbar.style.bottom = '-32px';
+            }
             this._container.style.margin = '0 20px 40px 0';
         } else if (this.options.position == 'top-right') {
-            this._amapControlbar.style.right = '-16px';
-            this._amapControlbar.style.bottom = '-200px';
+            if (this.options.showCompass) {
+                this._amapControlbar.style.right = '-16px';
+                this._amapControlbar.style.bottom = '-200px';
+            }
             this._container.style.margin = '20px 20px 0px 0';
         } else if (this.options.position == 'bottom-left') {
             this._container.style.margin = '0 0 10px 20px';
-            this._amapControlbar.style.left = '-85px';
-            this._amapControlbar.style.bottom = '-33px';
-            this._amapRotateRight.style.right = '-48px';
-            this._amapCompass.style.left = '93px';
-            this._amapPitchDown.style.margin = '12px';
-            this._amapPitchUp.style.margin = '0px';
-            this._amapPitchUp.style.left = '78%';
+            if (this.options.showCompass) {
+                this._amapControlbar.style.left = '-85px';
+                this._amapControlbar.style.bottom = '-33px';
+                this._amapRotateRight.style.right = '-48px';
+                this._amapCompass.style.left = '93px';
+                this._amapPitchDown.style.margin = '12px';
+                this._amapPitchUp.style.margin = '0px';
+                this._amapPitchUp.style.left = '78%';
+            }
         } else if (this.options.position == 'top-left') {
             this._container.style.margin = '20px 0 10px 20px';
-            this._amapControlbar.style.left = '-95px';
-            this._amapControlbar.style.top = '87px';
-            this._amapRotateRight.style.right = '-35px';
-            this._amapCompass.style.left = '93px';
-            this._amapPitchDown.style.margin = '0 12px';
-            this._amapPitchUp.style.margin = '0px';
-            this._amapPitchUp.style.left = '70%';
+            if (this.options.showCompass) {
+                this._amapControlbar.style.left = '-95px';
+                this._amapControlbar.style.top = '87px';
+                this._amapRotateRight.style.right = '-35px';
+                this._amapCompass.style.left = '93px';
+                this._amapPitchDown.style.margin = '0 12px';
+                this._amapPitchUp.style.margin = '0px';
+                this._amapPitchUp.style.left = '70%';
+            }
         }
     }
 
@@ -275,7 +283,6 @@ export class NavControl {
         button.setAttribute('aria-label', str);
     }
 }
-
 
 class NavMouseRotateWrapper {
 
