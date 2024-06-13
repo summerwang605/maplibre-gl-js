@@ -151,7 +151,6 @@
     }
   },
   "scripts": {
-    "start-debug": "run-p watch-css watch-dev start-server",
     "build-style-spec": "rollup --configPlugin @rollup/plugin-typescript -c rollup.config.style-spec.ts --bundleConfigAsCjs && rollup --configPlugin @rollup/plugin-typescript -c rollup.config.style-spec.ts --environment esm --bundleConfigAsCjs",
     "generate-dist-package": "node --no-warnings --loader ts-node/esm build/generate-dist-package.js",
     "generate-shaders": "node --no-warnings --loader ts-node/esm build/generate-shaders.ts",
@@ -199,7 +198,6 @@
     "start-mapabc": "run-p watch-css-mapabc watch-dev-mapabc start-server",
     "build-prod-mapabc": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:production,MAPABC:true,EXPORTNAMESPACE:mapabc",
     "build-css-mapabc": "postcss -o dist/mapabc-gl.css src/css/mapabc-gl.css",
-    "start-debug-mapabc": "run-p watch-css-mapabc watch-dev-mapabc start-server",
     "build-dev-mapabc": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,EXPORTNAMESPACE:mapabc",
     "build-dist-mapabc": "run-p --print-label generate-typings-mapabc build-dev-mapabc build-prod-mapabc build-css-mapabc",
     "generate-typings-topsmap": "ts-node build/generate-typings-topsmap.ts",
@@ -208,7 +206,6 @@
     "start-topsmap": "run-p watch-css-topsmap watch-dev-topsmap start-server",
     "build-prod-topsmap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:production,topsmap:true,EXPORTNAMESPACE:topsmap",
     "build-css-topsmap": "postcss -o dist/topsmap-gl.css src/css/topsmap-gl.css",
-    "start-debug-topsmap": "run-p watch-css-topsmap watch-dev-topsmap start-server",
     "build-dev-topsmap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,EXPORTNAMESPACE:topsmap",
     "build-dist-topsmap": "run-p --print-label generate-typings-topsmap build-dev-topsmap build-prod-topsmap build-css-topsmap",
     "generate-typings-amap": "ts-node build/generate-typings-amap.ts",
