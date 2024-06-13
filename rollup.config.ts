@@ -7,7 +7,9 @@ import bannerMapAbc from './build/banner-mapabc';
 import bannerTopsmap from './build/banner-topsmap';
 import bannerAmap from './build/banner-amap';
 import {RollupOptions} from 'rollup';
+import packageJson from './package.json' assert {type: 'json'};
 //import {importAssertions} from 'acorn-import-assertions';
+const version = packageJson.version;
 
 const {BUILD, MAPABC, EXPORTNAMESPACE} = process.env;
 const production = BUILD === 'production';
@@ -50,8 +52,13 @@ function getOutputFile(production, nameSpace) {
     return production ? 'dist/' + nameSpace + '-gl.js' : 'dist/' + nameSpace + '-gl-dev.js';
 }
 
+function getOutputFile1(production, nameSpace) {
+    return production ? 'dist/' + nameSpace +'/' + nameSpace + '-gl-' + version +'.js' : 'dist/' + nameSpace + '-gl-dev.js';
+}
+
 // 文件名称
 const outputFile = getOutputFile(production, nameSpace);
+const outputFile1 = getOutputFile1(production, nameSpace);
 
 /**
  * 打包配置插件
@@ -193,7 +200,7 @@ const config: RollupOptions[] = [{
     // into a single, final bundle. See rollup/bundle_prelude.js and
     // rollup/maplibregl.js for details.
     input: 'build/rollup/' + nameSpace + 'gl.js',
-    output: {
+    output: [{
         name: nameSpace + 'gl', // 生成命名空间名称
         file: outputFile,
         format: 'umd',
@@ -201,7 +208,16 @@ const config: RollupOptions[] = [{
         indent: false,
         intro: fs.readFileSync('./build/rollup/bundle_prelude_' + nameSpace + 'gl.js', 'utf8'),
         banner: fileBanner
-    },
+    },{
+        name: nameSpace + 'gl', // 生成命名空间名称
+        file: outputFile1,
+        format: 'umd',
+        sourcemap: true,
+        indent: false,
+        intro: fs.readFileSync('./build/rollup/bundle_prelude_' + nameSpace + 'gl.js', 'utf8'),
+        banner: fileBanner
+    }
+    ],
     watch: {
         // give the staging chunks a chance to finish before rebuilding the dev build
         buildDelay: 1000
