@@ -11,7 +11,8 @@ import packageJson from './package.json' assert {type: 'json'};
 //import {importAssertions} from 'acorn-import-assertions';
 const version = packageJson.version;
 
-const {BUILD, MAPABC, EXPORTNAMESPACE} = process.env;
+const {BUILD, MAPABC, EXPORTNAMESPACE, MINIFY} = process.env;
+const minified = MINIFY === 'true';
 const production = BUILD === 'production';
 
 /**
@@ -48,22 +49,22 @@ if (nameSpace == 'mapabc') {
  * @param production
  * @param nameSpace
  */
-function getOutputFile(production, nameSpace) {
-    return production ? 'dist/' + nameSpace + '-gl.js' : 'dist/' + nameSpace + '-gl-dev.js';
+function getOutputFile(production, nameSpace, minified) {
+    return production ? (minified? 'dist/' + nameSpace + '-gl.js':  'dist/' + nameSpace + '-gl-unminified.js') : 'dist/' + nameSpace + '-gl-dev.js';
 }
 
-function getOutputFile1(production, nameSpace) {
-    return production ? 'dist/' + nameSpace +'/' + nameSpace + '-gl-' + version +'.js' : 'dist/' + nameSpace + '-gl-dev.js';
+function getOutputFile1(production, nameSpace, minified) {
+    return production ? (minified? 'dist/' + nameSpace +'/' + nameSpace + '-gl-' + version +'.js':  'dist/' + nameSpace +'/' + nameSpace + '-gl-unminified-' + version +'.js') : 'dist/' + nameSpace + '-gl-dev.js';
 }
 
 // 文件名称
-const outputFile = getOutputFile(production, nameSpace);
-const outputFile1 = getOutputFile1(production, nameSpace);
+const outputFile = getOutputFile(production, nameSpace, minified);
+const outputFile1 = getOutputFile1(production, nameSpace, minified);
 
 /**
  * 打包配置插件
  */
-let pluginsForRollup = plugins(production);
+let pluginsForRollup = plugins(production, minified);
 let pluginsForRollup2 = [
     // Ingest the sourcemaps produced in the first step of the build.
     // This is the only reason we use Rollup for this second pass

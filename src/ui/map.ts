@@ -53,7 +53,8 @@ import type {
     StyleSpecification,
     LightSpecification,
     SourceSpecification,
-    TerrainSpecification
+    TerrainSpecification,
+    SkySpecification
 } from '@maplibre/maplibre-gl-style-spec';
 import type {MapGeoJSONFeature} from '../util/vectortile_to_geojson';
 import {districtSearch, driving, geocoder, poiSearch, walking} from '../util/msp_api/msp_api';
@@ -2888,6 +2889,31 @@ export class Map extends Camera {
      */
     getLight(): LightSpecification {
         return this.style.getLight();
+    }
+
+    /**
+     * Loads sky and fog defined by {@link SkySpecification} onto the map.
+     * Note: The fog only shows when using the terrain 3D feature.
+     * @param sky - Sky properties to set. Must conform to the [MapLibre Style Specification](https://maplibre.org/maplibre-gl-js-docs/style-spec/#sky).
+     * @returns `this`
+     * @example
+     * ```ts
+     * map.setSky({ 'sky-color': '#00f' });
+     * ```
+     */
+    setSky(sky: SkySpecification) {
+        this._lazyInitEmptyStyle();
+        this.style.setSky(sky);
+        return this._update(true);
+    }
+
+    /**
+     * Returns the value of the sky object.
+     *
+     * @returns sky Sky properties of the style.
+     */
+    getSky() {
+        return this.style.getSky();
     }
 
     /**
