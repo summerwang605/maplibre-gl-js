@@ -65,7 +65,9 @@ export class VectorTileWorkerSource implements WorkerSource {
      * Loads a vector tile
      */
     async loadVectorTile(params: WorkerTileParameters, abortController: AbortController): Promise<LoadVectorTileResult> {
+        console.debug('Loads a vector tile', params, abortController)
         const response = await getArrayBuffer(params.request, abortController);
+        console.debug('response ->', response)
         try {
             const vectorTile = new vt.VectorTile(new Protobuf(response.data));
             return {
