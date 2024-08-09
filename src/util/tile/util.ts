@@ -1,80 +1,68 @@
-import aesjs from 'aes-js';
+import * as crypto from 'crypto';
 
-export function decryptVectorTileData(dataEncrypt: ArrayBuffer): Uint8Array {
-    const keyBytes: Uint8Array = Uint8Array.from([
-        57, 48, 55, 100, 99, 98, 56, 57,
-        57, 98, 102, 101, 48, 97, 101, 98,
-        57, 48, 53, 56, 52, 53, 56, 56,
-        51, 101, 99, 51, 100, 56, 102, 53
+const algorithm = 'aes-256-cbc';
+const ivLength = 16; // AES block size
+
+export function decryptVectorTileBuffer(encryptedBuffer: ArrayBuffer): ArrayBuffer {
+    const keyBytes1: Uint8Array = new Uint8Array([
+        252, 159, 116, 47, 97, 45, 39,
+        184, 247, 166, 135, 108, 131, 186,
+        49, 193, 218, 17, 74, 153, 146,
+        150, 127, 16, 150, 32, 121, 240,
+        225, 227, 126, 158
     ]);
-    const ivBytes: Uint8Array = Uint8Array.from([
-        115, 105, 99, 100, 113,
-        117, 112, 110, 48, 119,
-        115, 110, 116, 117, 120,
-        119
+    // 将 Buffer 转换为 Uint8Array
+    const ivBytes1: Uint8Array = new Uint8Array([
+        140, 75, 77, 80, 104,
+        20, 177, 89, 101, 123,
+        81, 198, 222, 45, 139,
+        243
     ]);
-    // 创建加密实例
-    const aesCbc = new aesjs.ModeOfOperation.cbc(keyBytes, ivBytes);
-    //var decryptedBytes = aesCbc.decrypt(new Uint8Array(dataEncrypt));
-    try {
-        const decryptedBytes = aesCbc.decrypt(dataEncrypt);
-        return decryptedBytes;
-    } catch (ex) {
-        console.log('decrypt error', ex);
-        return new Uint8Array(dataEncrypt);
-    }
+
+    const decipher = crypto.createDecipheriv('aes-256-cbc', keyBytes1, ivBytes1);
+    // 解密数据
+    let decrypted = Buffer.concat([decipher.update(Buffer.from(encryptedBuffer)), decipher.final()]);
+    return decrypted;
 }
 
 
-export function decryptVectorTileData2(dataEncrypt: ArrayBuffer): Uint8Array {
-    const keyBytes: Uint8Array = Uint8Array.from([
-        57, 48, 55, 100, 99, 98, 56, 57,
-        57, 98, 102, 101, 48, 97, 101, 98,
-        57, 48, 53, 56, 52, 53, 56, 56,
-        51, 101, 99, 51, 100, 56, 102, 53
+// 将 ArrayBuffer 转换为 CryptoKey 对象
+async function importKey(rawKey: ArrayBuffer, algorithm: string): Promise<CryptoKey> {
+    return crypto.subtle.importKey(
+        'raw',
+        rawKey,
+        algorithm,
+        false,
+        ['decrypt']
+    );
+}
+/**
+ * 使用web支持的解密方法
+ * @param encryptedBuffer
+ */
+export async function decryptArrayBufferByWeb(encryptedBuffer: ArrayBuffer): Promise<ArrayBuffer> {
+    const keyBytes1: Uint8Array = new Uint8Array([
+        252, 159, 116, 47, 97, 45, 39,
+        184, 247, 166, 135, 108, 131, 186,
+        49, 193, 218, 17, 74, 153, 146,
+        150, 127, 16, 150, 32, 121, 240,
+        225, 227, 126, 158
     ]);
-    const ivBytes: Uint8Array = Uint8Array.from([
-        115, 105, 99, 100, 113,
-        117, 112, 110, 48, 119,
-        115, 110, 116, 117, 120,
-        119
+    // 将 Buffer 转换为 Uint8Array
+    const ivBytes1: Uint8Array = new Uint8Array([
+        140, 75, 77, 80, 104,
+        20, 177, 89, 101, 123,
+        81, 198, 222, 45, 139,
+        243
     ]);
-    // 创建加密实例
-    const aesCbc = new aesjs.ModeOfOperation.cbc(keyBytes, ivBytes);
-    return new Uint8Array(aesCbc.decrypt(dataEncrypt));
+
+    const algorithm = {
+        name: 'AES-CBC',
+        iv: ivBytes1
+    };
+    const cryptoKey = await importKey(keyBytes1, algorithm.name);
+    const decryptedData = await crypto.subtle.decrypt(algorithm, cryptoKey, encryptedBuffer);
+    return decryptedData;
 }
 
 
-export function encryptVectorTileData2(data: ArrayBuffer): Uint8Array {
-    const keyBytes: Uint8Array = Uint8Array.from([
-        57, 48, 55, 100, 99, 98, 56, 57,
-        57, 98, 102, 101, 48, 97, 101, 98,
-        57, 48, 53, 56, 52, 53, 56, 56,
-        51, 101, 99, 51, 100, 56, 102, 53
-    ]);
-    const ivBytes: Uint8Array = Uint8Array.from([
-        115, 105, 99, 100, 113,
-        117, 112, 110, 48, 119,
-        115, 110, 116, 117, 120,
-        119
-    ]);
-    // 创建加密实例
-    const aesCbc = new aesjs.ModeOfOperation.cbc(keyBytes, ivBytes);
-    return new Uint8Array(aesCbc.encrypt(data));
-}
-
-
-export function base64ToUint8Array(base64String: string): Uint8Array {
-    // 解码Base64字符串
-    const binaryString = atob(base64String);
-    // 计算所需字节的长度
-    const len = binaryString.length;
-    // 创建一个Uint8Array来存储转换后的字节数据
-    const bytes = new Uint8Array(len);
-    // 将每个字符转换为对应的字节并存储在Uint8Array中
-    for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-    // 返回Uint8Array的底层ArrayBuffer
-    return bytes;
-}

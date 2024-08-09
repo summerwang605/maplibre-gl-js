@@ -5,7 +5,10 @@ import Protobuf from 'pbf';
 import {WorkerTile} from './worker_tile';
 import {extend} from '../util/util';
 import {RequestPerformance} from '../util/performance';
-import {decryptVectorTileData, decryptVectorTileData2, base64ToUint8Array} from '../util/tile/util';
+import {
+    decryptArrayBufferByWeb,
+    decryptVectorTileBuffer
+} from '../util/tile/util';
 
 import type {
     WorkerSource,
@@ -67,14 +70,9 @@ export class VectorTileWorkerSource implements WorkerSource {
      */
     async loadVectorTile(params: WorkerTileParameters, abortController: AbortController): Promise<LoadVectorTileResult> {
         if (params.request.url.startsWith("http://localhost:35005")) {
-            const response = await getText(params.request, abortController);
-            //console.log('response ->', response)
-            // console.log('response data ->', response.data) ArrayBuffer
-            // if(params.request.url.startsWith("http://localhost:35005")){
-            console.log('text response ->', response);
-            //const encryptedDataBuffer = Buffer.from('bLzQcbz+uV7PQe1mbA/N1x8jedTCNWr+tjaGppCbE3M=', 'base64');
-            const encryptedDataBuffer: Uint8Array = base64ToUint8Array(response.data);
-            const theData: ArrayBuffer = decryptVectorTileData2(encryptedDataBuffer).buffer;
+            const response = await getArrayBuffer(params.request, abortController);
+            console.log('ecrypt pbf file response ->', response);
+            const theData: ArrayBuffer = await decryptArrayBufferByWeb(response.data);
             try {
                 const vectorTile = new vt.VectorTile(new Protobuf(theData));
                 return {

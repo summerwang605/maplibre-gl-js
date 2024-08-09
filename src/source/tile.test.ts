@@ -12,11 +12,11 @@ import {serialize, deserialize} from '../util/web_worker_transfer';
 import aesjs from 'aes-js';
 import vt from "@mapbox/vector-tile";
 import Protobuf from "pbf";
+import * as crypto from 'crypto';
+
+
 import {
-    decryptVectorTileData2,
-    decryptVectorTileData,
-    base64ToUint8Array,
-    encryptVectorTileData2
+    decryptVectorTileBuffer
 } from '../util/tile/util';
 
 describe('querySourceFeatures', () => {
@@ -305,21 +305,64 @@ describe('decrypt tiles data', () => {
         const vectorTile = new vt.VectorTile(new Protobuf(pbfData));
         console.log(vectorTile);
     });
-    test('parse pbf file from encrypt', () => {
-        const pbfData = fs.readFileSync(path.join(__dirname, '../../test/unit/assets/encrypt-5-25-12.pbf'));
-        console.log(pbfData);
-        const data = decryptVectorTileData2(pbfData);
-        console.log(data.buffer);
-        const vectorTile = new vt.VectorTile(new Protobuf(data));
+    test('parse pbf file v3', () => {
+        const pbfData = fs.readFileSync(path.join(__dirname, '../../test/unit/aes/5-26-13.pbf'));
+        // const encryptData = encryptVectorTileData2(pbfData);
+        //  console.log('encryptData',encryptData);
+        const vectorTile = new vt.VectorTile(new Protobuf(pbfData));
         console.log(vectorTile);
     });
-    test('parse pbf file from encrypt base64', () => {
-       // const encryptedDataBuffer2: Uint8Array  = base64ToUint8Array('zbxzNQ7EkJ4ArSjAOzhqhw==');
-        const encryptedDataBuffer2: Uint8Array  = Buffer.from('zbxzNQ7EkJ4ArSjAOzhqhw==','base64');
-        const data: ArrayBuffer = decryptVectorTileData2(encryptedDataBuffer2).buffer;
-        console.log(data);
-        const vectorTile = new vt.VectorTile(new Protobuf(data));
+
+    test('parse pbf file v4', () => {
+        const pbfData = fs.readFileSync(path.join(__dirname, '../../test/unit/aes/5-26-12-decrypt-node.pbf'));
+        // const encryptData = encryptVectorTileData2(pbfData);
+        //  console.log('encryptData',encryptData);
+        const vectorTile = new vt.VectorTile(new Protobuf(pbfData));
         console.log(vectorTile);
+    });
+
+
+    test('decrypt pbf file by node', () => {
+        const pbfDataEncrypt = path.join(__dirname, '../../test/unit/aes/5-26-12-encrypt.pbf');
+        const pbfDataDecryptByNode =path.join(__dirname, '../../test/unit/aes/5-26-12-decrypt-node.pbf');
+        // const { key, iv } = getKeyAndIv(path.join(__dirname, '../../test/unit/aes/keyFile.key'), path.join(__dirname, '../../test/unit/aes/keyFile.key.iv'));
+        // console.log('key', key);
+        // console.log('iv', iv);
+        //
+        // // 将 Buffer 转换为 Uint8Array
+        // const keyBytes: Uint8Array = new Uint8Array(key);
+        // // 将 Buffer 转换为 Uint8Array
+        // const ivBytes: Uint8Array = new Uint8Array(iv);
+        // console.log('keyBytes', keyBytes);
+        // console.log('ivBytes', ivBytes);
+
+        const keyBytes1: Uint8Array = new Uint8Array([
+            252, 159, 116,  47,  97,  45,  39,
+            184, 247, 166, 135, 108, 131, 186,
+            49, 193, 218,  17,  74, 153, 146,
+            150, 127,  16, 150,  32, 121, 240,
+            225, 227, 126, 158
+        ]);
+        // 将 Buffer 转换为 Uint8Array
+        const ivBytes1: Uint8Array = new Uint8Array([
+            140,  75,  77,  80, 104,
+            20, 177,  89, 101, 123,
+            81, 198, 222,  45, 139,
+            243
+        ]);
+
+        const decipher = crypto.createDecipheriv('aes-256-cbc', keyBytes1, ivBytes1);
+        const input = fs.createReadStream(pbfDataEncrypt);
+        const output = fs.createWriteStream(pbfDataDecryptByNode);
+        input.pipe(decipher).pipe(output);
+        //let decrypted = Buffer.concat([decipher.update(encryptedBuffer), decipher.final()]);
+    });
+
+    test('parse pbf file from encrypt', () => {
+
+    });
+    test('parse pbf file from encrypt base64', () => {
+
     });
     test('test hex to byte array', () => {
         //var encryptedBytes = aesCbc.encrypt(textBytes);
