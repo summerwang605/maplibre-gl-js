@@ -9,7 +9,6 @@ import {FeatureIndex} from '../data/feature_index';
 import {CollisionBoxArray} from '../data/array_types.g';
 import {extend} from '../util/util';
 import {serialize, deserialize} from '../util/web_worker_transfer';
-import aesjs from 'aes-js';
 import vt from "@mapbox/vector-tile";
 import Protobuf from "pbf";
 import * as crypto from 'crypto';

@@ -1,4 +1,4 @@
-import * as crypto from 'crypto';
+// import * as crypto from 'crypto';
 
 const algorithm = 'aes-256-cbc';
 const ivLength = 16; // AES block size
@@ -19,10 +19,11 @@ export function decryptVectorTileBuffer(encryptedBuffer: ArrayBuffer): ArrayBuff
         243
     ]);
 
-    const decipher = crypto.createDecipheriv('aes-256-cbc', keyBytes1, ivBytes1);
-    // 解密数据
-    let decrypted = Buffer.concat([decipher.update(Buffer.from(encryptedBuffer)), decipher.final()]);
-    return decrypted;
+    // const decipher = crypto.createDecipheriv('aes-256-cbc', keyBytes1, ivBytes1);
+    // // 解密数据
+    // let decrypted = Buffer.concat([decipher.update(Buffer.from(encryptedBuffer)), decipher.final()]);
+    // return decrypted;
+    return encryptedBuffer;
 }
 
 
