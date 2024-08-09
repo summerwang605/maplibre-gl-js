@@ -263,6 +263,14 @@ export const getArrayBuffer = (requestParameters: RequestParameters, abortContro
     return makeRequest(extend(requestParameters, {type: 'arrayBuffer'}), abortController);
 };
 
+export const getText = (requestParameters: RequestParameters, abortController: AbortController): Promise<{data: string} & ExpiryData> => {
+    return makeRequest(extend(requestParameters, {type: 'string'}), abortController);
+};
+
+export const getImage = (requestParameters: RequestParameters, abortController: AbortController): Promise<{data: ArrayBuffer} & ExpiryData> => {
+    return makeRequest(extend(requestParameters, {type: 'image'}), abortController);
+};
+
 export function sameOrigin(inComingUrl: string) {
     // A relative URL "/foo" or "./foo" will throw exception in URL's ctor,
     // try-catch is expansive so just use a heuristic check to avoid it

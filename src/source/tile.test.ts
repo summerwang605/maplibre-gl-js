@@ -9,6 +9,15 @@ import {FeatureIndex} from '../data/feature_index';
 import {CollisionBoxArray} from '../data/array_types.g';
 import {extend} from '../util/util';
 import {serialize, deserialize} from '../util/web_worker_transfer';
+import aesjs from 'aes-js';
+import vt from "@mapbox/vector-tile";
+import Protobuf from "pbf";
+import {
+    decryptVectorTileData2,
+    decryptVectorTileData,
+    base64ToUint8Array,
+    encryptVectorTileData2
+} from '../util/tile/util';
 
 describe('querySourceFeatures', () => {
     const features = [{
@@ -47,7 +56,7 @@ describe('querySourceFeatures', () => {
         tile.querySourceFeatures(result, {sourceLayer: undefined, filter: ['!=', 'oneway', true]});
         expect(result).toHaveLength(0);
         result = [];
-        const polygon = {type: 'Polygon',  coordinates: [[[-91, -1], [-89, -1], [-89, 1], [-91, 1], [-91, -1]]]};
+        const polygon = {type: 'Polygon', coordinates: [[[-91, -1], [-89, -1], [-89, 1], [-91, 1], [-91, -1]]]};
         tile.querySourceFeatures(result, {sourceLayer: undefined, filter: ['within', polygon]});
         expect(result).toHaveLength(1);
     });
@@ -64,7 +73,9 @@ describe('querySourceFeatures', () => {
         geojsonWrapper.name = '_geojsonTileLayer';
 
         result = [];
-        expect(() => { tile.querySourceFeatures(result); }).not.toThrow();
+        expect(() => {
+            tile.querySourceFeatures(result);
+        }).not.toThrow();
         expect(result).toHaveLength(0);
     });
 
@@ -151,7 +162,9 @@ describe('Tile#isLessThan', () => {
             new OverscaledTileID(10, 0, 10, 291, 391),
         ];
 
-        const sortedTiles = tiles.sort((a, b) => { return a.isLessThan(b) ? -1 : b.isLessThan(a) ? 1 : 0; });
+        const sortedTiles = tiles.sort((a, b) => {
+            return a.isLessThan(b) ? -1 : b.isLessThan(a) ? 1 : 0;
+        });
 
         expect(sortedTiles).toEqual([
             new OverscaledTileID(9, 0, 9, 145, 194),
@@ -275,6 +288,43 @@ describe('rtl text detection', () => {
 function createRawTileData() {
     return fs.readFileSync(path.join(__dirname, '../../test/unit/assets/mbsv5-6-18-23.vector.pbf'));
 }
+
+describe('decrypt tiles data', () => {
+    test('decrypt tiles data', () => {
+        let data = createRawTileData();
+    });
+    test('parse pbf file', () => {
+        const pbfData = fs.readFileSync(path.join(__dirname, '../../test/unit/assets/8-211-96.pbf'));
+        const vectorTile = new vt.VectorTile(new Protobuf(pbfData));
+        console.log(vectorTile);
+    });
+    test('parse pbf file v2', () => {
+        const pbfData = fs.readFileSync(path.join(__dirname, '../../test/unit/assets/5-26-13.pbf'));
+        // const encryptData = encryptVectorTileData2(pbfData);
+        //  console.log('encryptData',encryptData);
+        const vectorTile = new vt.VectorTile(new Protobuf(pbfData));
+        console.log(vectorTile);
+    });
+    test('parse pbf file from encrypt', () => {
+        const pbfData = fs.readFileSync(path.join(__dirname, '../../test/unit/assets/encrypt-5-25-12.pbf'));
+        console.log(pbfData);
+        const data = decryptVectorTileData2(pbfData);
+        console.log(data.buffer);
+        const vectorTile = new vt.VectorTile(new Protobuf(data));
+        console.log(vectorTile);
+    });
+    test('parse pbf file from encrypt base64', () => {
+       // const encryptedDataBuffer2: Uint8Array  = base64ToUint8Array('zbxzNQ7EkJ4ArSjAOzhqhw==');
+        const encryptedDataBuffer2: Uint8Array  = Buffer.from('zbxzNQ7EkJ4ArSjAOzhqhw==','base64');
+        const data: ArrayBuffer = decryptVectorTileData2(encryptedDataBuffer2).buffer;
+        console.log(data);
+        const vectorTile = new vt.VectorTile(new Protobuf(data));
+        console.log(vectorTile);
+    });
+    test('test hex to byte array', () => {
+        //var encryptedBytes = aesCbc.encrypt(textBytes);
+    });
+});
 
 function createVectorData(options?) {
     const collisionBoxArray = new CollisionBoxArray();

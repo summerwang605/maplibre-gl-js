@@ -45,7 +45,7 @@
     },
     "poisource": {
       "tiles": [
-        "http://13.75.103.188:35003/gs/{z}-{x}-{y}?layer=poi"
+          "http://localhost:35005/service/tile?SERVICE=vector&REQUEST=GETTILE&LAYER=poisource&VERSION=1.0.0&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}&FORMAT=application/x-protobuf&key=mapabc"
       ],
       "source_remark": "矢量地图（poi）\t",
       "mapabc_logo": true,

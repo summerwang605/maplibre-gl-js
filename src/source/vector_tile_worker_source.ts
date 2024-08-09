@@ -1,10 +1,11 @@
-import {ExpiryData, getArrayBuffer} from '../util/ajax';
+import {ExpiryData, getArrayBuffer, getText} from '../util/ajax';
 
 import vt from '@mapbox/vector-tile';
 import Protobuf from 'pbf';
 import {WorkerTile} from './worker_tile';
 import {extend} from '../util/util';
 import {RequestPerformance} from '../util/performance';
+import {decryptVectorTileData, decryptVectorTileData2, base64ToUint8Array} from '../util/tile/util';
 
 import type {
     WorkerSource,
@@ -42,9 +43,9 @@ export class VectorTileWorkerSource implements WorkerSource {
     actor: IActor;
     layerIndex: StyleLayerIndex;
     availableImages: Array<string>;
-    fetching: {[_: string]: FetchingState };
-    loading: {[_: string]: WorkerTile};
-    loaded: {[_: string]: WorkerTile};
+    fetching: { [_: string]: FetchingState };
+    loading: { [_: string]: WorkerTile };
+    loaded: { [_: string]: WorkerTile };
 
     /**
      * @param loadVectorData - Optional method for custom loading of a VectorTile
@@ -65,27 +66,57 @@ export class VectorTileWorkerSource implements WorkerSource {
      * Loads a vector tile
      */
     async loadVectorTile(params: WorkerTileParameters, abortController: AbortController): Promise<LoadVectorTileResult> {
-        console.debug('Loads a vector tile', params, abortController)
-        const response = await getArrayBuffer(params.request, abortController);
-        console.debug('response ->', response)
-        try {
-            const vectorTile = new vt.VectorTile(new Protobuf(response.data));
-            return {
-                vectorTile,
-                rawData: response.data,
-                cacheControl: response.cacheControl,
-                expires: response.expires
-            };
-        } catch (ex) {
-            const bytes = new Uint8Array(response.data);
-            const isGzipped = bytes[0] === 0x1f && bytes[1] === 0x8b;
-            let errorMessage = `Unable to parse the tile at ${params.request.url}, `;
-            if (isGzipped) {
-                errorMessage += 'please make sure the data is not gzipped and that you have configured the relevant header in the server';
-            } else {
-                errorMessage += `got error: ${ex.message}`;
+        if (params.request.url.startsWith("http://localhost:35005")) {
+            const response = await getText(params.request, abortController);
+            //console.log('response ->', response)
+            // console.log('response data ->', response.data) ArrayBuffer
+            // if(params.request.url.startsWith("http://localhost:35005")){
+            console.log('text response ->', response);
+            //const encryptedDataBuffer = Buffer.from('bLzQcbz+uV7PQe1mbA/N1x8jedTCNWr+tjaGppCbE3M=', 'base64');
+            const encryptedDataBuffer: Uint8Array = base64ToUint8Array(response.data);
+            const theData: ArrayBuffer = decryptVectorTileData2(encryptedDataBuffer).buffer;
+            try {
+                const vectorTile = new vt.VectorTile(new Protobuf(theData));
+                return {
+                    vectorTile,
+                    rawData: theData,
+                    cacheControl: response.cacheControl || 'max-age=2592000',
+                    expires: response.expires
+                };
+            } catch (ex) {
+                const bytes = new Uint8Array(theData);
+                const isGzipped = bytes[0] === 0x1f && bytes[1] === 0x8b;
+                let errorMessage = `Unable to parse the tile at ${params.request.url}, `;
+                if (isGzipped) {
+                    errorMessage += 'please make sure the data is not gzipped and that you have configured the relevant header in the server';
+                } else {
+                    errorMessage += `got error: ${ex.message}`;
+                }
+                throw new Error(errorMessage);
             }
-            throw new Error(errorMessage);
+        } else {
+            // console.log('Loads a vector tile', params, abortController)
+            const response = await getArrayBuffer(params.request, abortController);
+            console.log('pbf response ', response);
+            try {
+                const vectorTile = new vt.VectorTile(new Protobuf(response.data));
+                return {
+                    vectorTile,
+                    rawData: response.data,
+                    cacheControl: response.cacheControl,
+                    expires: response.expires
+                };
+            } catch (ex) {
+                const bytes = new Uint8Array(response.data);
+                const isGzipped = bytes[0] === 0x1f && bytes[1] === 0x8b;
+                let errorMessage = `Unable to parse the tile at ${params.request.url}, `;
+                if (isGzipped) {
+                    errorMessage += 'please make sure the data is not gzipped and that you have configured the relevant header in the server';
+                } else {
+                    errorMessage += `got error: ${ex.message}`;
+                }
+                throw new Error(errorMessage);
+            }
         }
     }
 
@@ -117,7 +148,7 @@ export class VectorTileWorkerSource implements WorkerSource {
             if (response.expires) cacheControl.expires = response.expires;
             if (response.cacheControl) cacheControl.cacheControl = response.cacheControl;
 
-            const resourceTiming = {} as {resourceTiming: any};
+            const resourceTiming = {} as { resourceTiming: any };
             if (perf) {
                 const resourceTimingData = perf.finish();
                 // it's necessary to eval the result of getEntriesByName() here via parse/stringify

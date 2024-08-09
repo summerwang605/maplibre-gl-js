@@ -34,14 +34,14 @@
         maxPitch: 85,
         ////style: 'mapabc79w',
         // style: 'mapabc://styles/mapabc79w',
-       // style: 'http://192.168.124.3:8000/js/mapabc22125.json',
+        // style: 'http://192.168.124.3:8000/js/mapabc22125.json',
         style: 'http://localhost:9966/test/debug-pages/mapabc/mapabc80.json',
         hash: true,
         accessToken: 'ec85d3648154874552835438ac6a02b2' //map options
     });
 
     map.on('load', function () {
-        console.log('mapabcgl loaded..')
+        console.log('mapabcgl loaded..');
         // map.setTerrain({
         //     source: 'terrainSource',
         //     exaggeration: 1
@@ -52,6 +52,22 @@
         //         exaggeration: 1
         //     })
         // );
+
+        map.addSource('poisource_encrypt', {
+            type: 'vector',
+            tiles: ['http://localhost:35005/service/tile?SERVICE=vector&REQUEST=GETTILE&LAYER=poisource&VERSION=1.0.0&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}&FORMAT=application/x-protobuf&key=mapabc']
+        });
+
+        map.addLayer({
+            'id': 'poi',
+            'type': 'circle',
+            'source': 'poisource_encrypt',
+            'source-layer': 'poi',
+            'paint': {
+                'circle-radius': 10, // 圆圈半径
+                'circle-color': '#007BFF' // 圆圈颜色
+            }
+        });
     });
 
     map.addControl(new mapabcgl.ScaleControl({unit: 'metric'}));
@@ -64,11 +80,11 @@
     }));
 
     map.on('click', function (e) {
-        console.log(e)
+        console.log(e);
         const features = map.queryRenderedFeatures(e.point, {filter: ["==", "$type", "Polygon"]});
-        console.log(features)
+        console.log(features);
         e.preventDefault();
-    })
+    });
 
 
 </script>

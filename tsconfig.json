@@ -16,6 +16,7 @@
     "strict": false,
     "target": "ES2016",
     "lib": [
+      "ES2016",
       "ESNext",
       "DOM",
       "DOM.Iterable"
