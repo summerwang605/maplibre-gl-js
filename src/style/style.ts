@@ -797,9 +797,11 @@ export class Style extends Evented {
 
     addImage(id: string, image: StyleImage) {
         if (this.getImage(id)) {
-            return this.fire(new ErrorEvent(new Error(`An image named "${id}" already exists.`)));
+            //return this.fire(new ErrorEvent(new Error(`An image named "${id}" already exists.`)));
+            this.updateImage(id, image);
+        }else{
+            this.imageManager.addImage(id, image);
         }
-        this.imageManager.addImage(id, image);
         this._afterImageUpdated(id);
     }
 

@@ -71,7 +71,7 @@ export class VectorTileWorkerSource implements WorkerSource {
     async loadVectorTile(params: WorkerTileParameters, abortController: AbortController): Promise<LoadVectorTileResult> {
         if (params.request.url.startsWith("http://localhost:35005")) {
             const response = await getArrayBuffer(params.request, abortController);
-            console.log('ecrypt pbf file response ->', response);
+            // console.log('ecrypt pbf file response ->', response);
             const theData: ArrayBuffer = await decryptArrayBufferByWeb(response.data);
             try {
                 const vectorTile = new vt.VectorTile(new Protobuf(theData));
@@ -95,7 +95,7 @@ export class VectorTileWorkerSource implements WorkerSource {
         } else {
             // console.log('Loads a vector tile', params, abortController)
             const response = await getArrayBuffer(params.request, abortController);
-            console.log('pbf response ', response);
+            // console.log('pbf response ', response);
             try {
                 const vectorTile = new vt.VectorTile(new Protobuf(response.data));
                 return {
