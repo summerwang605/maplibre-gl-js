@@ -3,19 +3,21 @@ import {StyleLayer} from '../style_layer';
 import {FillExtrusionBucket} from '../../data/bucket/fill_extrusion_bucket';
 import {polygonIntersectsPolygon, polygonIntersectsMultiPolygon} from '../../util/intersection_tests';
 import {translateDistance, translate} from '../query_utils';
-import properties, {FillExtrusionPaintPropsPossiblyEvaluated} from './fill_extrusion_style_layer_properties.g';
-import {Transitionable, Transitioning, PossiblyEvaluated} from '../properties';
-import {mat4, vec4} from 'gl-matrix';
+import properties, {type FillExtrusionPaintPropsPossiblyEvaluated} from './fill_extrusion_style_layer_properties.g';
+import {type Transitionable, type Transitioning, type PossiblyEvaluated} from '../properties';
+import {type mat4, vec4} from 'gl-matrix';
 import Point from '@mapbox/point-geometry';
 import type {FeatureState, LayerSpecification} from '@maplibre/maplibre-gl-style-spec';
 import type {BucketParameters} from '../../data/bucket';
 import type {FillExtrusionPaintProps} from './fill_extrusion_style_layer_properties.g';
-import type {Transform} from '../../geo/transform';
+import type {IReadonlyTransform} from '../../geo/transform_interface';
 import type {VectorTileFeature} from '@mapbox/vector-tile';
 
 export class Point3D extends Point {
     z: number;
 }
+
+export const isFillExtrusionStyleLayer = (layer: StyleLayer): layer is FillExtrusionStyleLayer => layer.type === 'fill-extrusion';
 
 export class FillExtrusionStyleLayer extends StyleLayer {
     _transitionablePaint: Transitionable<FillExtrusionPaintProps>;
@@ -44,7 +46,7 @@ export class FillExtrusionStyleLayer extends StyleLayer {
         featureState: FeatureState,
         geometry: Array<Array<Point>>,
         zoom: number,
-        transform: Transform,
+        transform: IReadonlyTransform,
         pixelsToTileUnits: number,
         pixelPosMatrix: mat4
     ): boolean | number {
@@ -52,7 +54,7 @@ export class FillExtrusionStyleLayer extends StyleLayer {
         const translatedPolygon = translate(queryGeometry,
             this.paint.get('fill-extrusion-translate'),
             this.paint.get('fill-extrusion-translate-anchor'),
-            transform.angle, pixelsToTileUnits);
+            -transform.bearingInRadians, pixelsToTileUnits);
 
         const height = this.paint.get('fill-extrusion-height').evaluate(feature, featureState);
         const base = this.paint.get('fill-extrusion-base').evaluate(feature, featureState);
@@ -213,7 +215,7 @@ function projectExtrusion(geometry: Array<Array<Point>>, zBase: number, zTop: nu
     return [projectedBase, projectedTop];
 }
 
-function projectQueryGeometry(queryGeometry: Array<Point>, pixelPosMatrix: mat4, transform: Transform, z: number) {
+function projectQueryGeometry(queryGeometry: Array<Point>, pixelPosMatrix: mat4, transform: IReadonlyTransform, z: number) {
     const projectedQueryGeometry = [];
     for (const p of queryGeometry) {
         const v = [p.x, p.y, z, 1] as vec4;

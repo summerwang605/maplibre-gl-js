@@ -6,7 +6,7 @@ import banner from './build/banner';
 import bannerMapAbc from './build/banner-mapabc';
 import bannerTopsmap from './build/banner-topsmap';
 import bannerAmap from './build/banner-amap';
-import {RollupOptions} from 'rollup';
+import {type RollupOptions} from 'rollup';
 import packageJson from './package.json' assert {type: 'json'};
 //import {importAssertions} from 'acorn-import-assertions';
 const version = packageJson.version;
@@ -168,6 +168,7 @@ if (nameSpace != 'maplibre') {
         values: forReplaceOption
     }));
 }
+
 
 const config: RollupOptions[] = [{
     // Before rollup you should run build-tsc to transpile from typescript to javascript (except when running rollup in watch mode)

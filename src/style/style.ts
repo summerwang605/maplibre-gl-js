@@ -1,5 +1,5 @@
 import {Event, ErrorEvent, Evented} from '../util/evented';
-import {StyleLayer} from './style_layer';
+import {type StyleLayer} from './style_layer';
 import {createStyleLayer} from './create_style_layer';
 import {loadSprite} from './load_sprite';
 import {ImageManager} from '../render/image_manager';
@@ -14,11 +14,11 @@ import {ResourceType} from '../util/request_manager';
 import {browser} from '../util/browser';
 import {Dispatcher} from '../util/dispatcher';
 import {validateStyle, emitValidationErrors as _emitValidationErrors} from './validate_style';
-import {Source} from '../source/source';
-import {QueryRenderedFeaturesOptions, QuerySourceFeatureOptions, queryRenderedFeatures, queryRenderedSymbols, querySourceFeatures} from '../source/query_features';
+import {type Source} from '../source/source';
+import {type QueryRenderedFeaturesOptions, type QueryRenderedFeaturesOptionsStrict, type QuerySourceFeatureOptions, queryRenderedFeatures, queryRenderedSymbols, querySourceFeatures} from '../source/query_features';
 import {SourceCache} from '../source/source_cache';
-import {GeoJSONSource} from '../source/geojson_source';
-import {latest as styleSpec, derefLayers as deref, emptyStyle, diff as diffStyles, DiffCommand} from '@maplibre/maplibre-gl-style-spec';
+import {type GeoJSONSource} from '../source/geojson_source';
+import {latest as styleSpec, derefLayers as deref, emptyStyle, diff as diffStyles, type DiffCommand} from '@maplibre/maplibre-gl-style-spec';
 import {getGlobalWorkerPool} from '../util/global_worker_pool';
 import {rtlMainThreadPluginFactory} from '../source/rtl_text_plugin_main_thread';
 import {RTLPluginLoadedEventName} from '../source/rtl_text_plugin_status';
@@ -38,7 +38,7 @@ const emitValidationErrors = (evented: Evented, errors?: ReadonlyArray<{
     _emitValidationErrors(evented, errors && errors.filter(error => error.identifier !== 'source.canvas'));
 
 import type {Map} from '../ui/map';
-import type {Transform} from '../geo/transform';
+import type {IReadonlyTransform, ITransform} from '../geo/transform_interface';
 import type {StyleImage} from './style_image';
 import type {EvaluationParameters} from './evaluation_parameters';
 import type {Placement} from '../symbol/placement';
@@ -50,6 +50,7 @@ import type {
     SourceSpecification,
     SpriteSpecification,
     DiffOperations,
+    ProjectionSpecification,
     SkySpecification
 } from '@maplibre/maplibre-gl-style-spec';
 import type {CanvasSourceSpecification} from '../source/canvas_source';
@@ -62,6 +63,8 @@ import {
     type GetImagesParameters,
     type GetImagesResponse
 } from '../util/actor_messages';
+import {type Projection} from '../geo/projection/projection';
+import {createProjectionFromName} from '../geo/projection/projection_factory';
 
 const empty = emptyStyle() as StyleSpecification;
 /**
@@ -118,6 +121,7 @@ export type StyleSetterOptions = {
  * - when previous style carries certain 'state' that needs to be carried over to a new style gracefully;
  * - when a desired style is a certain combination of previous and incoming style;
  * - when an incoming style requires modification based on external state.
+ * - when an incoming style uses relative paths, which need to be converted to absolute.
  *
  * @param previous - The current style.
  * @param next - The next style.
@@ -128,8 +132,18 @@ export type StyleSetterOptions = {
  * map.setStyle('https://demotiles.maplibre.org/style.json', {
  *   transformStyle: (previousStyle, nextStyle) => ({
  *       ...nextStyle,
+ *       // make relative sprite path like "../sprite" absolute
+ *       sprite: new URL(nextStyle.sprite, "https://demotiles.maplibre.org/styles/osm-bright-gl-style/sprites/").href,
+ *       // make relative glyphs path like "../fonts/{fontstack}/{range}.pbf" absolute
+ *       glyphs: new URL(nextStyle.glyphs, "https://demotiles.maplibre.org/font/").href,
  *       sources: {
- *           ...nextStyle.sources,
+ *           // make relative vector url like "../../" absolute
+ *           ...nextStyle.sources.map(source => {
+ *              if (source.url) {
+     *              source.url = new URL(source.url, "https://api.maptiler.com/tiles/osm-bright-gl-style/");
+ *              }
+ *              return source;
+ *           }),
  *           // copy a source from previous style
  *           'osm': previousStyle.sources.osm
  *       },
@@ -189,6 +203,7 @@ export class Style extends Evented {
     glyphManager: GlyphManager;
     lineAtlas: LineAtlas;
     light: Light;
+    projection: Projection;
     sky: Sky;
 
     _frameRequest: AbortController;
@@ -344,6 +359,8 @@ export class Style extends Evented {
         this._createLayers();
 
         this.light = new Light(this.stylesheet.light);
+        this._setProjectionInternal(this.stylesheet.projection?.type || 'mercator');
+
         this.sky = new Sky(this.stylesheet.sky);
 
         this.map.setTerrain(this.stylesheet.terrain ?? null);
@@ -741,6 +758,7 @@ export class Style extends Evented {
                 case 'setZoom':
                 case 'setBearing':
                 case 'setPitch':
+                case 'setRoll':
                     continue;
                 case 'addLayer':
                     operations.push(() => this.addLayer.apply(this, op.args));
@@ -778,11 +796,14 @@ export class Style extends Evented {
                 case 'setSprite':
                     operations.push(() => this.setSprite.apply(this, op.args));
                     break;
+                case 'setTerrain':
+                    operations.push(() => this.map.setTerrain.apply(this, op.args));
+                    break;
                 case 'setSky':
                     operations.push(() => this.setSky.apply(this, op.args));
                     break;
-                case 'setTerrain':
-                    operations.push(() => this.map.setTerrain.apply(this, op.args));
+                case 'setProjection':
+                    this.setProjection.apply(this, op.args);
                     break;
                 case 'setTransition':
                     operations.push(() => {});
@@ -1306,6 +1327,7 @@ export class Style extends Evented {
             sprite: myStyleSheet.sprite,
             glyphs: myStyleSheet.glyphs,
             transition: myStyleSheet.transition,
+            projection: myStyleSheet.projection,
             sources,
             layers,
             terrain
@@ -1396,15 +1418,16 @@ export class Style extends Evented {
         return features;
     }
 
-    queryRenderedFeatures(queryGeometry: any, params: QueryRenderedFeaturesOptions, transform: Transform) {
+    queryRenderedFeatures(queryGeometry: any, params: QueryRenderedFeaturesOptions, transform: IReadonlyTransform) {
         if (params && params.filter) {
             this._validate(validateStyle.filter, 'queryRenderedFeatures.filter', params.filter, null, params);
         }
 
         const includedSources = {};
         if (params && params.layers) {
-            if (!Array.isArray(params.layers)) {
-                this.fire(new ErrorEvent(new Error('parameters.layers must be an Array.')));
+            const isArrayOrSet = Array.isArray(params.layers) || params.layers instanceof Set;
+            if (!isArrayOrSet) {
+                this.fire(new ErrorEvent(new Error('parameters.layers must be an Array or a Set of strings')));
                 return [];
             }
             for (const layerId of params.layers) {
@@ -1425,6 +1448,12 @@ export class Style extends Evented {
         // LayerSpecification is serialized StyleLayer, and this casting is safe.
         const serializedLayers = this._serializedAllLayers() as {[_: string]: StyleLayer};
 
+        const layersAsSet = params.layers instanceof Set ? params.layers : Array.isArray(params.layers) ? new Set(params.layers) : null;
+        const paramsStrict: QueryRenderedFeaturesOptionsStrict = {
+            ...params,
+            layers: layersAsSet,
+        };
+
         for (const id in this.sourceCaches) {
             if (params.layers && !includedSources[id]) continue;
             sourceResults.push(
@@ -1433,7 +1462,7 @@ export class Style extends Evented {
                     this._layers,
                     serializedLayers,
                     queryGeometry,
-                    params,
+                    paramsStrict,
                     transform)
             );
         }
@@ -1447,7 +1476,7 @@ export class Style extends Evented {
                     serializedLayers,
                     this.sourceCaches,
                     queryGeometry,
-                    params,
+                    paramsStrict,
                     this.placement.collisionIndex,
                     this.placement.retainedQueryData)
             );
@@ -1496,12 +1525,29 @@ export class Style extends Evented {
         this.light.updateTransitions(parameters);
     }
 
+    getProjection(): ProjectionSpecification {
+        return this.stylesheet?.projection;
+    }
+
+    setProjection(projection: ProjectionSpecification) {
+        this._checkLoaded();
+        if (this.projection) {
+            if (this.projection.name === projection.type) return;
+            this.projection.destroy();
+            delete this.projection;
+        }
+        this.stylesheet.projection = projection;
+        this._setProjectionInternal(projection.type);
+    }
+
     getSky(): SkySpecification {
         return this.stylesheet?.sky;
     }
 
     setSky(skyOptions?: SkySpecification, options: StyleSetterOptions = {}) {
+        this._checkLoaded();
         const sky = this.getSky();
+
         let update = false;
         if (!skyOptions && !sky) return;
 
@@ -1530,6 +1576,15 @@ export class Style extends Evented {
         this.stylesheet.sky = skyOptions;
         this.sky.setSky(skyOptions, options);
         this.sky.updateTransitions(parameters);
+    }
+
+    _setProjectionInternal(name: ProjectionSpecification['type']) {
+        const projectionObjects = createProjectionFromName(name);
+        this.projection = projectionObjects.projection;
+        this.map.migrateProjection(projectionObjects.transform, projectionObjects.cameraHelper);
+        for (const key in this.sourceCaches) {
+            this.sourceCaches[key].reload();
+        }
     }
 
     _validate(validate: Validator, key: string, value: any, props: any, options: {
@@ -1586,7 +1641,7 @@ export class Style extends Evented {
         this.sourceCaches[id].reload();
     }
 
-    _updateSources(transform: Transform) {
+    _updateSources(transform: ITransform) {
         for (const id in this.sourceCaches) {
             this.sourceCaches[id].update(transform, this.map.terrain);
         }
@@ -1598,7 +1653,7 @@ export class Style extends Evented {
         }
     }
 
-    _updatePlacement(transform: Transform, showCollisionBoxes: boolean, fadeDuration: number, crossSourceCollisions: boolean, forceFullPlacement: boolean = false) {
+    _updatePlacement(transform: ITransform, showCollisionBoxes: boolean, fadeDuration: number, crossSourceCollisions: boolean, forceFullPlacement: boolean = false) {
         let symbolBucketsChanged = false;
         let placementCommitted = false;
 
@@ -1697,14 +1752,14 @@ export class Style extends Evented {
     }
 
     async getGlyphs(mapId: string | number, params: GetGlyphsParameters): Promise<GetGlyphsResponse> {
-        const glypgs = await this.glyphManager.getGlyphs(params.stacks);
+        const glyphs = await this.glyphManager.getGlyphs(params.stacks);
         const sourceCache = this.sourceCaches[params.source];
         if (sourceCache) {
             // we are not setting stacks as dependencies since for now
             // we just need to know which tiles have glyph dependencies
             sourceCache.setDependencies(params.tileID.key, params.type, ['']);
         }
-        return glypgs;
+        return glyphs;
     }
 
     getGlyphsUrl() {

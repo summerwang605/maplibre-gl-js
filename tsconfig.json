@@ -24,8 +24,7 @@
     "types": [
       "node",
       "geojson",
-      "offscreencanvas",
-      "jest"
+      "offscreencanvas"
     ]
   },
   "ts-node": {

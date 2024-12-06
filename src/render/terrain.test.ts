@@ -1,3 +1,4 @@
+import {describe, beforeEach, afterEach, test, expect, vi} from 'vitest';
 import Point from '@mapbox/point-geometry';
 import {Terrain} from './terrain';
 import {Context} from '../gl/context';
@@ -7,7 +8,7 @@ import {OverscaledTileID} from '../source/tile_id';
 import type {TerrainSpecification} from '@maplibre/maplibre-gl-style-spec';
 import type {DEMData} from '../data/dem_data';
 import {Tile} from '../source/tile';
-import {Painter} from './painter';
+import {type Painter} from './painter';
 import {mat4} from 'gl-matrix';
 import {LngLat} from '../geo/lng_lat';
 import {MAX_TILE_ZOOM, MIN_TILE_ZOOM} from '../util/util';
@@ -17,8 +18,8 @@ describe('Terrain', () => {
 
     beforeEach(() => {
         gl = document.createElement('canvas').getContext('webgl');
-        jest.spyOn(gl, 'checkFramebufferStatus').mockReturnValue(gl.FRAMEBUFFER_COMPLETE);
-        jest.spyOn(gl, 'readPixels').mockImplementation((_1, _2, _3, _4, _5, _6, rgba) => {
+        vi.spyOn(gl, 'checkFramebufferStatus').mockReturnValue(gl.FRAMEBUFFER_COMPLETE);
+        vi.spyOn(gl, 'readPixels').mockImplementation((_1, _2, _3, _4, _5, _6, rgba) => {
             rgba[0] = 0;
             rgba[1] = 0;
             rgba[2] = 255;
@@ -27,7 +28,7 @@ describe('Terrain', () => {
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     test('pointCoordinate should not return null', () => {
@@ -38,9 +39,9 @@ describe('Terrain', () => {
             height: 1,
             pixelRatio: 1,
             transform: {center: {lng: 0}},
-            maybeDrawDepthAndCoords: jest.fn(),
+            maybeDrawDepthAndCoords: vi.fn(),
         } as any as Painter;
-        const sourceCache = {} as SourceCache;
+        const sourceCache = {_source: {tileSize: 512}} as SourceCache;
         const getTileByID = (tileID) : Tile => {
             if (tileID !== 'abcd') {
                 return null as any as Tile;
@@ -72,10 +73,10 @@ describe('Terrain', () => {
             context: new Context(gl),
             width: WORLD_WIDTH,
             height: 1,
-            maybeDrawDepthAndCoords: jest.fn(),
+            maybeDrawDepthAndCoords: vi.fn(),
             pixelRatio,
         } as any as Painter;
-        const sourceCache = {} as SourceCache;
+        const sourceCache = {_source: {tileSize: 512}} as SourceCache;
         const terrain = new Terrain(painter, sourceCache, {} as any as TerrainSpecification);
         const tileIdsToWraps = {a: -1, b: 0, c: 1, d: 2};
         terrain.sourceCache.getTileByID = (id) => {
@@ -88,7 +89,7 @@ describe('Terrain', () => {
         };
         terrain.getElevation = () => 0;
         terrain.coordsIndex = Object.keys(tileIdsToWraps);
-        jest.spyOn(gl, 'readPixels').mockImplementation((x, _2, _3, _4, _5, _6, rgba) => {
+        vi.spyOn(gl, 'readPixels').mockImplementation((x, _2, _3, _4, _5, _6, rgba) => {
             rgba[0] = 0;
             rgba[1] = 0;
             rgba[2] = 0;
@@ -155,7 +156,7 @@ describe('Terrain', () => {
             getTileTexture: () => null
         } as any as Painter;
         const sourceCache = {
-            _source: {maxzoom: 12},
+            _source: {maxzoom: 12, tileSize: 512},
             _cache: {max: 10},
             getTileByID: () => {
                 return tile;
@@ -183,7 +184,7 @@ describe('Terrain', () => {
             getTileTexture: () => null
         } as any as Painter;
         const sourceCache = {
-            _source: {maxzoom: 12},
+            _source: {maxzoom: 12, tileSize: 512},
             _cache: {max: 10},
             getTileByID: () => null,
         } as any as SourceCache;
@@ -210,7 +211,7 @@ describe('Terrain', () => {
             getTileTexture: () => null
         } as any as Painter;
         const sourceCache = {
-            _source: {maxzoom: 12},
+            _source: {maxzoom: 12, tileSize: 512},
             _cache: {max: 10},
             getTileByID: () => {
                 return tile;
@@ -239,7 +240,7 @@ describe('Terrain', () => {
             height: 1,
         } as any as Painter;
         const sourceCache = {
-            _source: {maxzoom: 12},
+            _source: {maxzoom: 12, tileSize: 512},
             _cache: {max: 10}
         } as any as SourceCache;
         const terrain = new Terrain(
@@ -259,7 +260,6 @@ describe('Terrain', () => {
             getDEMElevation: Terrain.prototype.getDEMElevation,
             getTerrainData() {
                 return {
-                    // eslint-disable-next-line camelcase
                     u_terrain_matrix: mat4.create(),
                     tile: {
                         dem: {
@@ -284,7 +284,7 @@ describe('Terrain', () => {
     });
 
     test('getElevationForLngLatZoom with lng less than -180 wraps correctly', () => {
-        const terrain = new Terrain(null, {} as any, {} as any);
+        const terrain = new Terrain(null, {_source: {tileSize: 512}} as any, {} as any);
 
         const OVERSCALETILEID_DOES_NOT_THROW = 4;
         terrain.getElevation = () => OVERSCALETILEID_DOES_NOT_THROW;
@@ -292,7 +292,7 @@ describe('Terrain', () => {
     });
 
     test('getMinTileElevationForLngLatZoom with lng less than -180 wraps correctly', () => {
-        const terrain = new Terrain(null, {} as any, {} as any);
+        const terrain = new Terrain(null, {_source: {tileSize: 512}} as any, {} as any);
 
         const OVERSCALETILEID_DOES_NOT_THROW = 4;
         terrain.getMinMaxElevation = () => ({minElevation: OVERSCALETILEID_DOES_NOT_THROW, maxElevation: 42});
@@ -300,7 +300,7 @@ describe('Terrain', () => {
     });
 
     describe('getElevationForLngLatZoom returns 0 for out of bounds', () => {
-        const terrain = new Terrain(null, {} as any, {} as any);
+        const terrain = new Terrain(null, {_source: {tileSize: 512}} as any, {} as any);
 
         test('lng', () => {
             expect(terrain.getElevationForLngLatZoom(new LngLat(180, 0), 0)).toBe(0);

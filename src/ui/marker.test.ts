@@ -1,7 +1,9 @@
+import {describe, beforeEach, test, expect, vi} from 'vitest';
 import {createMap as globalCreateMap, beforeMapTest, sleep} from '../util/test/util';
 import {Marker} from './marker';
 import {Popup} from './popup';
 import {LngLat} from '../geo/lng_lat';
+import {MercatorTransform} from '../geo/projection/mercator_transform';
 import Point from '@mapbox/point-geometry';
 import simulate from '../../test/unit/lib/simulate_interaction';
 import type {Terrain} from '../render/terrain';
@@ -460,9 +462,9 @@ describe('marker', () => {
             .addTo(map);
         const el = marker.getElement();
 
-        const dragstart = jest.fn();
-        const drag      = jest.fn();
-        const dragend   = jest.fn();
+        const dragstart = vi.fn();
+        const drag      = vi.fn();
+        const dragend   = vi.fn();
 
         marker.on('dragstart', dragstart);
         marker.on('drag',      drag);
@@ -509,9 +511,9 @@ describe('marker', () => {
             .addTo(map);
         const el = marker.getElement();
 
-        const dragstart = jest.fn();
-        const drag      = jest.fn();
-        const dragend   = jest.fn();
+        const dragstart = vi.fn();
+        const drag      = vi.fn();
+        const dragend   = vi.fn();
 
         marker.on('dragstart', dragstart);
         marker.on('drag',      drag);
@@ -558,9 +560,9 @@ describe('marker', () => {
             .addTo(map);
         const el = marker.getElement();
 
-        const dragstart = jest.fn();
-        const drag      = jest.fn();
-        const dragend   = jest.fn();
+        const dragstart = vi.fn();
+        const drag      = vi.fn();
+        const dragend   = vi.fn();
 
         marker.on('dragstart', dragstart);
         marker.on('drag',      drag);
@@ -591,9 +593,9 @@ describe('marker', () => {
             .addTo(map);
         const el = marker.getElement();
 
-        const dragstart = jest.fn();
-        const drag      = jest.fn();
-        const dragend   = jest.fn();
+        const dragstart = vi.fn();
+        const drag      = vi.fn();
+        const dragend   = vi.fn();
 
         marker.on('dragstart', dragstart);
         marker.on('drag',      drag);
@@ -640,9 +642,9 @@ describe('marker', () => {
             .addTo(map);
         const el = marker.getElement();
 
-        const dragstart = jest.fn();
-        const drag      = jest.fn();
-        const dragend   = jest.fn();
+        const dragstart = vi.fn();
+        const drag      = vi.fn();
+        const dragend   = vi.fn();
 
         marker.on('dragstart', dragstart);
         marker.on('drag',      drag);
@@ -689,9 +691,9 @@ describe('marker', () => {
             .addTo(map);
         const el = marker.getElement();
 
-        const dragstart = jest.fn();
-        const drag      = jest.fn();
-        const dragend   = jest.fn();
+        const dragstart = vi.fn();
+        const drag      = vi.fn();
+        const dragend   = vi.fn();
 
         marker.on('dragstart', dragstart);
         marker.on('drag',      drag);
@@ -854,8 +856,8 @@ describe('marker', () => {
     });
 
     test('Marker removed after update when terrain is on should clear timeout', async () => {
-        jest.spyOn(global, 'setTimeout');
-        jest.spyOn(global, 'clearTimeout');
+        vi.spyOn(global, 'setTimeout');
+        vi.spyOn(global, 'clearTimeout');
         const map = createMap();
         const marker = new Marker()
             .setLngLat([0, 0])
@@ -943,7 +945,7 @@ describe('marker', () => {
 
     test('Marker changes opacity behind terrain and when terrain is removed', async () => {
         const map = createMap();
-        map.transform.lngLatToCameraDepth = () => .95; // Mocking distance to marker
+        vi.spyOn(MercatorTransform.prototype, 'lngLatToCameraDepth').mockImplementation((_lngLat, _ele) => 0.95); // Mocking distance to marker
         const marker = new Marker()
             .setLngLat([0, 0])
             .addTo(map);
@@ -978,7 +980,7 @@ describe('marker', () => {
 
     test('Applies options.opacity when 3d terrain is enabled and marker is in clear view', async () => {
         const map = createMap();
-        map.transform.lngLatToCameraDepth = () => .95; // Mocking distance to marker
+        vi.spyOn(MercatorTransform.prototype, 'lngLatToCameraDepth').mockImplementation((_lngLat, _ele) => 0.95); // Mocking distance to marker
         const marker = new Marker({opacity: '0.7'})
             .setLngLat([0, 0])
             .addTo(map);
@@ -996,7 +998,7 @@ describe('marker', () => {
 
     test('Applies options.opacity when marker\'s base is hidden by 3d terrain but its center is visible', async () => {
         const map = createMap();
-        map.transform.lngLatToCameraDepth = () => .95; // Mocking distance to marker
+        vi.spyOn(MercatorTransform.prototype, 'lngLatToCameraDepth').mockImplementation((_lngLat, _ele) => 0.95); // Mocking distance to marker
         const marker = new Marker({opacity: '0.7'})
             .setLngLat([0, 0])
             .addTo(map);

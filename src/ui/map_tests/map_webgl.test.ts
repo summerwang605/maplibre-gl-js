@@ -1,3 +1,4 @@
+import {beforeEach, test, expect, vi} from 'vitest';
 import {createMap, beforeMapTest} from '../../util/test/util';
 
 beforeEach(() => {
@@ -5,23 +6,23 @@ beforeEach(() => {
     global.fetch = null;
 });
 
-test('does not fire "webglcontextlost" after #remove has been called', done => {
+test('does not fire "webglcontextlost" after #remove has been called', () => new Promise<void>((done) => {
     const map = createMap();
     const canvas = map.getCanvas();
-    map.once('webglcontextlost', () => done('"webglcontextlost" fired after #remove has been called'));
+    map.once('webglcontextlost', () => { throw new Error('"webglcontextlost" fired after #remove has been called'); });
     map.remove();
     // Dispatch the event manually because at the time of this writing, gl does not support
     // the WEBGL_lose_context extension.
     canvas.dispatchEvent(new window.Event('webglcontextlost'));
     done();
-});
+}));
 
-test('does not fire "webglcontextrestored" after #remove has been called', done => {
+test('does not fire "webglcontextrestored" after #remove has been called', () => new Promise<void>((done) => {
     const map = createMap();
     const canvas = map.getCanvas();
 
     map.once('webglcontextlost', () => {
-        map.once('webglcontextrestored', () => done('"webglcontextrestored" fired after #remove has been called'));
+        map.once('webglcontextrestored', () => { throw new Error('"webglcontextrestored" fired after #remove has been called'); });
         map.remove();
         canvas.dispatchEvent(new window.Event('webglcontextrestored'));
         done();
@@ -30,7 +31,7 @@ test('does not fire "webglcontextrestored" after #remove has been called', done 
     // Dispatch the event manually because at the time of this writing, gl does not support
     // the WEBGL_lose_context extension.
     canvas.dispatchEvent(new window.Event('webglcontextlost'));
-});
+}));
 
 test('WebGL error while creating map', () => {
     const original = HTMLCanvasElement.prototype.getContext;
@@ -62,8 +63,8 @@ test('Hit WebGL max drawing buffer limit', () => {
     Object.defineProperty(container, 'clientWidth', {value: 8000});
     Object.defineProperty(container, 'clientHeight', {value: 4500});
     const map = createMap({container, maxCanvasSize: [16834, 16834], pixelRatio: 1});
-    jest.spyOn(map.painter.context.gl, 'drawingBufferWidth', 'get').mockReturnValue(7536);
-    jest.spyOn(map.painter.context.gl, 'drawingBufferHeight', 'get').mockReturnValue(4239);
+    vi.spyOn(map.painter.context.gl, 'drawingBufferWidth', 'get').mockReturnValue(7536);
+    vi.spyOn(map.painter.context.gl, 'drawingBufferHeight', 'get').mockReturnValue(4239);
     map.resize();
     expect(map.getCanvas().width).toBe(7536);
     expect(map.getCanvas().height).toBe(4239);
