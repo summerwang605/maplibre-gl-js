@@ -301,7 +301,7 @@ async function getImageFromStyle(styleForTest: StyleWithTestData, page: Page): P
                 }`;
 
                 const fragmentSource = `#version 300 es
-                
+
                 out highp vec4 fragColor;
                 void main() {
                     fragColor = vec4(1.0, 0.0, 0.0, 1.0);
@@ -452,7 +452,7 @@ async function getImageFromStyle(styleForTest: StyleWithTestData, page: Page): P
                 // Inject MapLibre projection code
                 ${shaderDescription.vertexShaderPrelude}
                 ${shaderDescription.define}
-                
+
                 in vec3 a_pos;
 
                 void main() {
@@ -732,7 +732,7 @@ async function getImageFromStyle(styleForTest: StyleWithTestData, page: Page): P
                 attributionControl: false,
                 maxPitch: options.maxPitch,
                 pixelRatio: options.pixelRatio,
-                preserveDrawingBuffer: true,
+                canvasContextAttributes: {preserveDrawingBuffer: true, powerPreference: 'default'},
                 fadeDuration: options.fadeDuration || 0,
                 localIdeographFontFamily: options.localIdeographFontFamily || false as any,
                 crossSourceCollisions: typeof options.crossSourceCollisions === 'undefined' ? true : options.crossSourceCollisions,
@@ -982,8 +982,13 @@ async function executeRenderTests() {
         options.openBrowser = checkParameter(options, '--open-browser');
     }
 
-    const browser = await puppeteer.launch({headless: !options.openBrowser, args: ['--enable-webgl', '--no-sandbox',
-        '--disable-web-security']});
+    const browser = await puppeteer.launch({
+        headless: !options.openBrowser,
+        args: [
+            '--enable-webgl',
+            '--no-sandbox',
+            '--disable-web-security'
+        ]});
 
     const server = http.createServer(
         st({

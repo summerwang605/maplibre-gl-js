@@ -1,10 +1,31 @@
 ## main
 
 ### ✨ Features and improvements
+- Allows setting the desired WebGL version to use ([#5236](https://github.com/maplibre/maplibre-gl-js/pull/5236)). You can now use `contextType` inside `canvasContextAttributes` to choose which WebGL version to use
 - _...Add new stuff here..._
 
 ### 🐞 Bug fixes
+
+- Fix holes at the poles when terrain is used with globe ([#5232](https://github.com/maplibre/maplibre-gl-js/pull/5232))
+- Fix geometry artifacts when globe terrain is zoomed out too much ([#5232](https://github.com/maplibre/maplibre-gl-js/pull/5232))
+- Fix center being incorrectly constrained when using globe ([#5186](https://github.com/maplibre/maplibre-gl-js/pull/5186))
+- Fix atmosphere improperly blending into the background ([#5235](https://github.com/maplibre/maplibre-gl-js/pull/5235))
+- Fix parsing wrong hash location ([#5131](https://github.com/maplibre/maplibre-gl-js/pull/5131))
 - _...Add new stuff here..._
+
+## 5.0.0-pre.10
+
+### ✨ Features and improvements
+
+- Add support for projection type expression as part of a refactoring of the transfrom and projection classes ([#5139](https://github.com/maplibre/maplibre-gl-js/pull/5139))
+- ⚠️ Support setting WebGL context options on map creation ([#5196](https://github.com/maplibre/maplibre-gl-js/pull/5196)). Previously supported WebGL context options like `antialias`, `preserveDrawingBuffer` and `failIfMajorPerformanceCaveat` must now be defined inside the `canvasContextAttributes` object on `MapOptions`.
+- Dual-Stack WebGL Runtime with WebGL2 to WebGL1 Fallback ([#5198](https://github.com/maplibre/maplibre-gl-js/pull/5198))
+
+### 🐞 Bug fixes
+
+- Fix globe custom layers being supplied incorrect matrices after projection transition to mercator ([#5150](https://github.com/maplibre/maplibre-gl-js/pull/5150))
+- Fix custom 3D models disappearing during projection transition ([#5150](https://github.com/maplibre/maplibre-gl-js/pull/5150))
+- Fix regression in NavigationControl compass on Firefox and Safari browsers ([#5205](https://github.com/maplibre/maplibre-gl-js/pull/5205))
 
 ## 5.0.0-pre.9
 
