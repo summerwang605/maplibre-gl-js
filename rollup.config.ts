@@ -1,5 +1,5 @@
 import fs from 'fs';
-import sourcemaps from 'rollup-plugin-sourcemaps';
+import sourcemaps from 'rollup-plugin-sourcemaps2';
 import replace from '@rollup/plugin-replace';
 import {plugins, watchStagingPlugin} from './build/rollup_plugins';
 import banner from './build/banner';
@@ -21,10 +21,10 @@ const production = BUILD === 'production';
  */
 let nameSpace = 'maplibre';
 if (EXPORTNAMESPACE == undefined) {
-    console.log("未指定 EXPORTNAMESPACE 参数 使用默认参数 maplibre");
+    console.log('未指定 EXPORTNAMESPACE 参数 使用默认参数 maplibre');
 } else {
     nameSpace = EXPORTNAMESPACE;
-    console.log("指定 EXPORTNAMESPACE 参数 打包命名空间名称为 -> " + nameSpace);
+    console.log(`指定 EXPORTNAMESPACE 参数 打包命名空间名称为 ->${nameSpace}`);
 
 }
 // 是否打包成mapabcgl命名空间
@@ -50,11 +50,11 @@ if (nameSpace == 'mapabc') {
  * @param nameSpace
  */
 function getOutputFile(production, nameSpace, minified) {
-    return production ? (minified? 'dist/' + nameSpace + '-gl.js':  'dist/' + nameSpace + '-gl-unminified.js') : 'dist/' + nameSpace + '-gl-dev.js';
+    return production ? (minified? `dist/${nameSpace}-gl.js`:  `dist/${nameSpace}-gl-unminified.js`) : `dist/${nameSpace}-gl-dev.js`;
 }
 
 function getOutputFile1(production, nameSpace, minified) {
-    return production ? (minified? 'dist/' + nameSpace +'/' + nameSpace + '-gl-' + version +'.js':  'dist/' + nameSpace +'/' + nameSpace + '-gl-unminified-' + version +'.js') : 'dist/' + nameSpace + '-gl-dev.js';
+    return production ? (minified? `dist/${nameSpace}/${nameSpace}-gl-${version}.js`:  `dist/${nameSpace}/${nameSpace}-gl-unminified-${version}.js`) : `dist/${nameSpace}-gl-dev.js`;
 }
 
 // 文件名称
@@ -64,8 +64,8 @@ const outputFile1 = getOutputFile1(production, nameSpace, minified);
 /**
  * 打包配置插件
  */
-let pluginsForRollup = plugins(production, minified);
-let pluginsForRollup2 = [
+const pluginsForRollup = plugins(production);
+const pluginsForRollup2 = [
     // Ingest the sourcemaps produced in the first step of the build.
     // This is the only reason we use Rollup for this second pass
     sourcemaps(),
@@ -180,7 +180,7 @@ const config: RollupOptions[] = [{
     // This is also where we do all of our source transformations using the plugins.
     input: ['src/index.ts', 'src/source/worker.ts'],
     output: {
-        dir: 'staging/' + nameSpace + 'gl',
+        dir: `staging/${nameSpace}gl`,
         format: 'amd',
         sourcemap: 'inline',
         indent: false,
@@ -201,22 +201,22 @@ const config: RollupOptions[] = [{
     // Next, bundle together the three "chunks" produced in the previous pass
     // into a single, final bundle. See rollup/bundle_prelude.js and
     // rollup/maplibregl.js for details.
-    input: 'build/rollup/' + nameSpace + 'gl.js',
+    input: `build/rollup/${nameSpace}gl.js`,
     output: [{
-        name: nameSpace + 'gl', // 生成命名空间名称
+        name: `${nameSpace}gl`, // 生成命名空间名称
         file: outputFile,
         format: 'umd',
         sourcemap: true,
         indent: false,
-        intro: fs.readFileSync('./build/rollup/bundle_prelude_' + nameSpace + 'gl.js', 'utf8'),
+        intro: fs.readFileSync(`./build/rollup/bundle_prelude_${nameSpace}gl.js`, 'utf8'),
         banner: fileBanner
     },{
-        name: nameSpace + 'gl', // 生成命名空间名称
+        name: `${nameSpace}gl`, // 生成命名空间名称
         file: outputFile1,
         format: 'umd',
         sourcemap: true,
         indent: false,
-        intro: fs.readFileSync('./build/rollup/bundle_prelude_' + nameSpace + 'gl.js', 'utf8'),
+        intro: fs.readFileSync(`./build/rollup/bundle_prelude_${nameSpace}gl.js`, 'utf8'),
         banner: fileBanner
     }
     ],

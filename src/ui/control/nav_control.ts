@@ -1,10 +1,10 @@
-import Point from '@mapbox/point-geometry';
+import type Point from '@mapbox/point-geometry';
 
 import {DOM} from '../../util/dom';
 import {extend, bindAll} from '../../util/util';
 import {
-    MouseRotateHandler,
-    MousePitchHandler,
+    type MouseRotateHandler,
+    type MousePitchHandler,
     generateMouseRotationHandler,
     generateMousePitchHandler
 } from '../handler/mouse';
@@ -13,15 +13,15 @@ import type {Map} from '../map';
 import {
     generateOneFingerTouchPitchHandler,
     generateOneFingerTouchRotationHandler,
-    OneFingerTouchPitchHandler,
-    OneFingerTouchRotateHandler
-} from "../handler/one_finger_touch_drag";
+    type OneFingerTouchPitchHandler,
+    type OneFingerTouchRotateHandler
+} from '../handler/one_finger_touch_drag';
 
 type NavOptions = {
-    showCompass?: boolean,
-    showZoom?: boolean,
-    visualizePitch?: boolean,
-    position?: string
+    showCompass?: boolean;
+    showZoom?: boolean;
+    visualizePitch?: boolean;
+    position?: string;
 };
 
 const defaultOptions: NavOptions = {
@@ -90,8 +90,8 @@ export class NavControl {
             }));
             //倾斜角度控制按钮
             this._amapPitchUp = DOM.create('div', 'amap-pitchUp', this._amapLuopan);
-            this._amapPitchUp.addEventListener('mousedown', function (ev) {
-                this_._intervalFunc = setInterval(function () {
+            this._amapPitchUp.addEventListener('mousedown', (ev) => {
+                this_._intervalFunc = setInterval(() => {
                     if (this_._map.getPitch() == 60) {
                         clearInterval(this_._intervalFunc);
                     } else {
@@ -99,17 +99,17 @@ export class NavControl {
                     }
                 }, 50);
             });
-            this._amapPitchUp.addEventListener('mouseup', function (ev) {
+            this._amapPitchUp.addEventListener('mouseup', (ev) => {
                 clearInterval(this_._intervalFunc);
             });
-            this._amapPitchUp.addEventListener('mouseleave', function (ev) {
+            this._amapPitchUp.addEventListener('mouseleave', (ev) => {
                 clearInterval(this_._intervalFunc);
             });
 
             //傾斜角度
             this._amapPitchDown = DOM.create('div', 'amap-pitchDown', this._amapLuopan);
-            this._amapPitchDown.addEventListener('mousedown', function (ev) {
-                this_._intervalFunc = setInterval(function () {
+            this._amapPitchDown.addEventListener('mousedown', (ev) => {
+                this_._intervalFunc = setInterval(() => {
                     if (this_._map.getPitch() == 0) {
                         clearInterval(this_._intervalFunc);
                     } else {
@@ -117,38 +117,38 @@ export class NavControl {
                     }
                 }, 50);
             });
-            this._amapPitchDown.addEventListener('mouseup', function (ev) {
+            this._amapPitchDown.addEventListener('mouseup', (ev) => {
                 clearInterval(this_._intervalFunc);
             });
-            this._amapPitchDown.addEventListener('mouseleave', function (ev) {
+            this._amapPitchDown.addEventListener('mouseleave', (ev) => {
                 clearInterval(this_._intervalFunc);
             });
 
             //旋转角度控制按钮-逆时针
             this._amapRotateLeft = DOM.create('div', 'amap-rotateLeft', this._amapLuopan);
-            this._amapRotateLeft.addEventListener('mousedown', function (ev) {
-                this_._intervalFunc = setInterval(function () {
+            this._amapRotateLeft.addEventListener('mousedown', (ev) => {
+                this_._intervalFunc = setInterval(() => {
                     this_._map.easeTo({bearing: this_._map.getBearing() + 10, duration: 100, animate: true});
                 }, 50);
             });
-            this._amapRotateLeft.addEventListener('mouseup', function (ev) {
+            this._amapRotateLeft.addEventListener('mouseup', (ev) => {
                 clearInterval(this_._intervalFunc);
             });
-            this._amapRotateLeft.addEventListener('mouseleave', function (ev) {
+            this._amapRotateLeft.addEventListener('mouseleave', (ev) => {
                 clearInterval(this_._intervalFunc);
             });
 
             //旋转角度控制按钮-顺时针
             this._amapRotateRight = DOM.create('div', 'amap-rotateRight', this._amapLuopan);
-            this._amapRotateRight.addEventListener('mousedown', function (ev) {
-                this_._intervalFunc = setInterval(function () {
+            this._amapRotateRight.addEventListener('mousedown', (ev) => {
+                this_._intervalFunc = setInterval(() => {
                     this_._map.easeTo({bearing: this_._map.getBearing() - 10, duration: 100, animate: true});
                 }, 50);
             });
-            this._amapRotateRight.addEventListener('mouseup', function (ev) {
+            this._amapRotateRight.addEventListener('mouseup', (ev) => {
                 clearInterval(this_._intervalFunc);
             });
-            this._amapRotateRight.addEventListener('mouseleave', function (ev) {
+            this._amapRotateRight.addEventListener('mouseleave', (ev) => {
                 clearInterval(this_._intervalFunc);
             });
         }
@@ -168,10 +168,7 @@ export class NavControl {
      * 重新計算羅盤指針方向
      */
     _rotateCompassArrow() {
-        const rotate = `rotate(${this._map.transform.angle * (180 / Math.PI)}deg)`;
-        // this._compassArrow.style.transform = rotate;
-        // 设置罗盘旋转角度和倾斜角度
-        const amapRotate = `rotateX(${this._map.transform._pitch * (180 / Math.PI)}deg) rotateZ(${this._map.transform.angle * (180 / Math.PI)}deg)`;
+        const amapRotate = `rotateX(${this._map.transform.pitch * (180 / Math.PI)}deg) rotateZ(${this._map.transform.angle * (180 / Math.PI)}deg)`;
         this._amapCompass.style.transform = amapRotate;
     }
 
