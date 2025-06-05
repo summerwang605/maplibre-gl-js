@@ -4,6 +4,7 @@ import {extend, warnOnce} from '../util/util';
 import {EXTENT} from '../data/extent';
 import {ResourceType} from '../util/request_manager';
 import {browser} from '../util/browser';
+import {LngLatBounds} from '../geo/lng_lat_bounds';
 
 import type {Source} from './source';
 import type {Map} from '../ui/map';
@@ -13,7 +14,7 @@ import type {Actor} from '../util/actor';
 import type {GeoJSONSourceSpecification, PromoteIdSpecification} from '@maplibre/maplibre-gl-style-spec';
 import type {GeoJSONSourceDiff} from './geojson_source_diff';
 import type {GeoJSONWorkerOptions, LoadGeoJSONParameters} from './geojson_worker_source';
-import {type WorkerTileParameters} from './worker_source';
+import type {WorkerTileParameters} from './worker_source';
 import {MessageType} from '../util/actor_messages';
 
 /**
@@ -43,7 +44,8 @@ export type SetClusterOptions = {
      */
     cluster?: boolean;
     /**
-     * The cluster's max zoom
+     * The cluster's max zoom.
+     * Non-integer values are rounded to the closest integer due to supercluster integer value requirements.
      */
     clusterMaxZoom?: number;
     /**
@@ -177,7 +179,7 @@ export class GeoJSONSource extends Evented implements Source {
                 generateId: options.generateId || false
             },
             superclusterOptions: {
-                maxZoom: options.clusterMaxZoom !== undefined ? options.clusterMaxZoom : this.maxzoom - 1,
+                maxZoom: this._getClusterMaxZoom(options.clusterMaxZoom),
                 minPoints: Math.max(2, options.clusterMinPoints || 2),
                 extent: EXTENT,
                 radius: this._pixelsToTileUnits(options.clusterRadius || 50),
@@ -196,6 +198,14 @@ export class GeoJSONSource extends Evented implements Source {
 
     private _pixelsToTileUnits(pixelValue: number): number {
         return pixelValue * (EXTENT / this.tileSize);
+    }
+
+    private _getClusterMaxZoom(clusterMaxZoom: number): number {
+        const effectiveClusterMaxZoom = clusterMaxZoom ? Math.round(clusterMaxZoom) : this.maxzoom - 1;
+        if (!(Number.isInteger(clusterMaxZoom) || clusterMaxZoom === undefined)) {
+            warnOnce(`Integer expected for option 'clusterMaxZoom': provided value "${clusterMaxZoom}" rounded to "${effectiveClusterMaxZoom}"`);
+        }
+        return effectiveClusterMaxZoom;
     }
 
     async load() {
@@ -249,6 +259,42 @@ export class GeoJSONSource extends Evented implements Source {
         return this.actor.sendAsync({type: MessageType.getData, data: options});
     }
 
+    private getCoordinatesFromGeometry(geometry: GeoJSON.Geometry): number[] {
+        if (geometry.type === 'GeometryCollection') {
+            return geometry.geometries.map((g: Exclude<GeoJSON.Geometry, GeoJSON.GeometryCollection>) => g.coordinates).flat(Infinity) as number[];
+        }
+        return geometry.coordinates.flat(Infinity) as number[];
+    }
+
+    /**
+     * Allows getting the source's boundaries.
+     * If there's a problem with the source's data, it will return an empty {@link LngLatBounds}.
+     * @returns a promise which resolves to the source's boundaries
+     */
+    async getBounds(): Promise<LngLatBounds> {
+        const bounds = new LngLatBounds();
+        const data = await this.getData();
+        let coordinates: number[];
+        switch (data.type) {
+            case 'FeatureCollection':
+                coordinates = data.features.map(f => this.getCoordinatesFromGeometry(f.geometry)).flat(Infinity) as number[];
+                break;
+            case 'Feature':
+                coordinates = this.getCoordinatesFromGeometry(data.geometry);
+                break;
+            default:
+                coordinates = this.getCoordinatesFromGeometry(data);
+                break;
+        }
+        if (coordinates.length == 0) {
+            return bounds;
+        }
+        for (let i = 0; i < coordinates.length - 1; i += 2) {
+            bounds.extend([coordinates[i], coordinates[i+1]]);
+        }
+        return bounds;
+    }
+
     /**
      * To disable/enable clustering on the source options
      * @param options - The options to set
@@ -262,7 +308,9 @@ export class GeoJSONSource extends Evented implements Source {
         this.workerOptions.cluster = options.cluster;
         if (options) {
             if (options.clusterRadius !== undefined) this.workerOptions.superclusterOptions.radius = this._pixelsToTileUnits(options.clusterRadius);
-            if (options.clusterMaxZoom !== undefined) this.workerOptions.superclusterOptions.maxZoom = options.clusterMaxZoom;
+            if (options.clusterMaxZoom !== undefined) {
+                this.workerOptions.superclusterOptions.maxZoom = this._getClusterMaxZoom(options.clusterMaxZoom);
+            }
         }
         this._updateWorkerData();
         return this;
@@ -391,7 +439,8 @@ export class GeoJSONSource extends Evented implements Source {
             pixelRatio: this.map.getPixelRatio(),
             showCollisionBoxes: this.map.showCollisionBoxes,
             promoteId: this.promoteId,
-            subdivisionGranularity: this.map.style.projection.subdivisionGranularity
+            subdivisionGranularity: this.map.style.projection.subdivisionGranularity,
+            globalState: this.map.getGlobalState()
         };
 
         tile.abortController = new AbortController();
