@@ -1,7 +1,10 @@
 import type Point from '@mapbox/point-geometry';
 
 import {DOM} from '../../util/dom';
-import {extend, bindAll} from '../../util/util';
+import type {Map} from '../map';
+import type {IControl} from './control';
+
+import {extend, bindAll, getAngleDelta} from '../../util/util';
 import {
     type MouseRotateHandler,
     type MousePitchHandler,
@@ -9,7 +12,6 @@ import {
     generateMousePitchHandler
 } from '../handler/mouse';
 
-import type {Map} from '../map';
 import {
     generateOneFingerTouchPitchHandler,
     generateOneFingerTouchRotationHandler,
@@ -17,7 +19,7 @@ import {
     type OneFingerTouchRotateHandler
 } from '../handler/one_finger_touch_drag';
 
-type NavOptions = {
+export type NavOptions = {
     showCompass?: boolean;
     showZoom?: boolean;
     visualizePitch?: boolean;
@@ -31,7 +33,7 @@ const defaultOptions: NavOptions = {
     position: 'bottom-right'
 };
 
-export class NavControl {
+export class NavControl implements IControl {
     _map: Map;
     options: NavOptions;
     _container: HTMLElement;
@@ -53,11 +55,11 @@ export class NavControl {
     _amapHandler: NavMouseRotateWrapper;
     _intervalFunc: any;
 
-    constructor(options: NavOptions) {
+    constructor(options?: NavOptions) {
         const this_ = this;
         this.options = extend({}, defaultOptions, options);
-        this._container = DOM.create('div', 'mapabcgl-ctrl mapabcgl-ctrl-group mapboxgl-ctrl mapboxgl-ctrl-group');
-        this._nav_container = DOM.create('div', 'mapabcgl-scalebox mapboxgl-scalebox zdeps-1 usel', this._container);
+        this._container = DOM.create('div', 'mapabcgl-ctrl mapabcgl-ctrl-group maplibregl-ctrl maplibregl-ctrl-group');
+        this._nav_container = DOM.create('div', 'maplibregl-scalebox maplibregl-scalebox zdeps-1 usel', this._container);
         this._container.addEventListener('contextmenu', (e) => e.preventDefault());
         this._nav_container.addEventListener('contextmenu', (e) => e.preventDefault());
         if (this.options.showZoom) {
@@ -168,7 +170,7 @@ export class NavControl {
      * 重新計算羅盤指針方向
      */
     _rotateCompassArrow() {
-        const amapRotate = `rotateX(${this._map.transform.pitch * (180 / Math.PI)}deg) rotateZ(${this._map.transform.angle * (180 / Math.PI)}deg)`;
+        const amapRotate = `rotateX(${this._map.transform.pitch * (180 / Math.PI)}deg) rotateZ(${this._map.transform.bearing * (180 / Math.PI)}deg)`;
         this._amapCompass.style.transform = amapRotate;
     }
 
@@ -207,10 +209,10 @@ export class NavControl {
         DOM.remove(this._container);
         delete this._map;
     }
-
+/*
     getDefaultPosition() {
         return this.options.position;
-    }
+    } */
 
     /**
      * 計算控件所在位置
@@ -296,11 +298,11 @@ class NavMouseRotateWrapper {
 
     constructor(map: Map, element: HTMLElement, pitch: boolean = false) {
         this._clickTolerance = 10;
-        const mapRotateTolerance = map.dragRotate._mouseRotate.getClickTolerance();
-        const mapPitchTolerance = map.dragRotate._mousePitch.getClickTolerance();
+        const mapRotateTolerance = this._clickTolerance; //map.dragRotate._mouseRotate.clickTolerance;
+        const mapPitchTolerance = this._clickTolerance; //map.dragRotate._mousePitch.clickTolerance;
         this.element = element;
         //this.mouseRotate = new MouseRotateHandler({clickTolerance: map.dragRotate._mouseRotate._clickTolerance});
-        this.mouseRotate = generateMouseRotationHandler({clickTolerance: mapRotateTolerance, enable: true});
+        this.mouseRotate = generateMouseRotationHandler({clickTolerance: mapRotateTolerance, enable: true}, () => map.project(map.getCenter()));
         this.touchRotate = generateOneFingerTouchRotationHandler({clickTolerance: mapRotateTolerance, enable: true});
         this.map = map;
         if (pitch) {
