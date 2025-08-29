@@ -30,12 +30,12 @@ export type RequestTransformFunction = (url: string, resourceType?: ResourceType
 export type RequestTransformFunctionCustom = (url: string, resourceType?: ResourceType, accessToken?: string | null | void) => RequestParameters;
 
 export class RequestManager {
-    _transformRequestFn: RequestTransformFunction;
-    transformRequestFnCustom: RequestTransformFunctionCustom;
+    _transformRequestFn: RequestTransformFunction | null;
+    transformRequestFnCustom: RequestTransformFunctionCustom | null;
     _customAccessToken: string;
 
-    constructor(transformRequestFn?: RequestTransformFunction, accessToken?: string) {
-        this._transformRequestFn = transformRequestFn;
+    constructor(transformRequestFn?: RequestTransformFunction | null, accessToken?: string) {
+        this._transformRequestFn = transformRequestFn ?? null;
         this._customAccessToken = accessToken || config.ACCESS_TOKEN || config.accessToken;
         this.transformRequestFnCustom = mspTransformRequestFunc;
        // console.log('mspTransformRequestFunc', mspTransformRequestFunc);
@@ -63,7 +63,7 @@ export class RequestManager {
         return url;
     }
 
-    setTransformRequest(transformRequest: RequestTransformFunction) {
+    setTransformRequest(transformRequest: RequestTransformFunction | null) {
         this._transformRequestFn = transformRequest;
     }
 
