@@ -1,12 +1,13 @@
 import fs from 'fs';
 import sourcemaps from 'rollup-plugin-sourcemaps2';
-import replace from '@rollup/plugin-replace';
 import {plugins, watchStagingPlugin} from './build/rollup_plugins';
 import banner from './build/banner';
+import {type RollupOptions} from 'rollup';
+
+import replace from '@rollup/plugin-replace';
 import bannerMapAbc from './build/banner-mapabc';
 import bannerTopsmap from './build/banner-topsmap';
 import bannerAmap from './build/banner-amap';
-import {type RollupOptions} from 'rollup';
 import json from '@rollup/plugin-json';
 import typescript from '@rollup/plugin-typescript';
 
