@@ -73,7 +73,7 @@ export class VectorTileWorkerSource implements WorkerSource {
             // console.log('ecrypt pbf file response ->', response);
             const theData: ArrayBuffer = await decryptArrayBufferByWeb(response.data);
             try {
-                const vectorTile = new vt.VectorTile(new Protobuf(theData));
+                const vectorTile = new VectorTile(new Protobuf(theData));
                 return {
                     vectorTile,
                     rawData: theData,
@@ -96,7 +96,7 @@ export class VectorTileWorkerSource implements WorkerSource {
             const response = await getArrayBuffer(params.request, abortController);
             // console.log('pbf response ', response);
             try {
-                const vectorTile = new vt.VectorTile(new Protobuf(response.data));
+                const vectorTile = new VectorTile(new Protobuf(response.data));
                 return {
                     vectorTile,
                     rawData: response.data,
