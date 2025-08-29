@@ -9,14 +9,6 @@ import {FeatureIndex} from '../data/feature_index';
 import {CollisionBoxArray} from '../data/array_types.g';
 import {extend} from '../util/util';
 import {serialize, deserialize} from '../util/web_worker_transfer';
-import vt from "@mapbox/vector-tile";
-import Protobuf from "pbf";
-import * as crypto from 'crypto';
-
-
-import {
-    decryptVectorTileBuffer
-} from '../util/tile/util';
 
 describe('querySourceFeatures', () => {
     const features = [{
@@ -55,7 +47,7 @@ describe('querySourceFeatures', () => {
         tile.querySourceFeatures(result, {sourceLayer: undefined, filter: ['!=', 'oneway', true]});
         expect(result).toHaveLength(0);
         result = [];
-        const polygon = {type: 'Polygon', coordinates: [[[-91, -1], [-89, -1], [-89, 1], [-91, 1], [-91, -1]]]};
+        const polygon = {type: 'Polygon',  coordinates: [[[-91, -1], [-89, -1], [-89, 1], [-91, 1], [-91, -1]]]};
         tile.querySourceFeatures(result, {sourceLayer: undefined, filter: ['within', polygon]});
         expect(result).toHaveLength(1);
     });
@@ -72,9 +64,7 @@ describe('querySourceFeatures', () => {
         geojsonWrapper.name = '_geojsonTileLayer';
 
         result = [];
-        expect(() => {
-            tile.querySourceFeatures(result);
-        }).not.toThrow();
+        expect(() => { tile.querySourceFeatures(result); }).not.toThrow();
         expect(result).toHaveLength(0);
     });
 
@@ -161,9 +151,7 @@ describe('Tile.isLessThan', () => {
             new OverscaledTileID(10, 0, 10, 291, 391),
         ];
 
-        const sortedTiles = tiles.sort((a, b) => {
-            return a.isLessThan(b) ? -1 : b.isLessThan(a) ? 1 : 0;
-        });
+        const sortedTiles = tiles.sort((a, b) => { return a.isLessThan(b) ? -1 : b.isLessThan(a) ? 1 : 0; });
 
         expect(sortedTiles).toEqual([
             new OverscaledTileID(9, 0, 9, 145, 194),
@@ -287,86 +275,6 @@ describe('rtl text detection', () => {
 function createRawTileData() {
     return fs.readFileSync(path.join(__dirname, '../../test/unit/assets/mbsv5-6-18-23.vector.pbf'));
 }
-
-describe('decrypt tiles data', () => {
-    test('decrypt tiles data', () => {
-        let data = createRawTileData();
-    });
-    test('parse pbf file', () => {
-        const pbfData = fs.readFileSync(path.join(__dirname, '../../test/unit/assets/8-211-96.pbf'));
-        const vectorTile = new vt.VectorTile(new Protobuf(pbfData));
-        console.log(vectorTile);
-    });
-    test('parse pbf file v2', () => {
-        const pbfData = fs.readFileSync(path.join(__dirname, '../../test/unit/assets/5-26-13.pbf'));
-        // const encryptData = encryptVectorTileData2(pbfData);
-        //  console.log('encryptData',encryptData);
-        const vectorTile = new vt.VectorTile(new Protobuf(pbfData));
-        console.log(vectorTile);
-    });
-    test('parse pbf file v3', () => {
-        const pbfData = fs.readFileSync(path.join(__dirname, '../../test/unit/aes/5-26-13.pbf'));
-        // const encryptData = encryptVectorTileData2(pbfData);
-        //  console.log('encryptData',encryptData);
-        const vectorTile = new vt.VectorTile(new Protobuf(pbfData));
-        console.log(vectorTile);
-    });
-
-    test('parse pbf file v4', () => {
-        const pbfData = fs.readFileSync(path.join(__dirname, '../../test/unit/aes/5-26-12-decrypt-node.pbf'));
-        // const encryptData = encryptVectorTileData2(pbfData);
-        //  console.log('encryptData',encryptData);
-        const vectorTile = new vt.VectorTile(new Protobuf(pbfData));
-        console.log(vectorTile);
-    });
-
-
-    test('decrypt pbf file by node', () => {
-        const pbfDataEncrypt = path.join(__dirname, '../../test/unit/aes/5-26-12-encrypt.pbf');
-        const pbfDataDecryptByNode =path.join(__dirname, '../../test/unit/aes/5-26-12-decrypt-node.pbf');
-        // const { key, iv } = getKeyAndIv(path.join(__dirname, '../../test/unit/aes/keyFile.key'), path.join(__dirname, '../../test/unit/aes/keyFile.key.iv'));
-        // console.log('key', key);
-        // console.log('iv', iv);
-        //
-        // // 将 Buffer 转换为 Uint8Array
-        // const keyBytes: Uint8Array = new Uint8Array(key);
-        // // 将 Buffer 转换为 Uint8Array
-        // const ivBytes: Uint8Array = new Uint8Array(iv);
-        // console.log('keyBytes', keyBytes);
-        // console.log('ivBytes', ivBytes);
-
-        const keyBytes1: Uint8Array = new Uint8Array([
-            252, 159, 116,  47,  97,  45,  39,
-            184, 247, 166, 135, 108, 131, 186,
-            49, 193, 218,  17,  74, 153, 146,
-            150, 127,  16, 150,  32, 121, 240,
-            225, 227, 126, 158
-        ]);
-        // 将 Buffer 转换为 Uint8Array
-        const ivBytes1: Uint8Array = new Uint8Array([
-            140,  75,  77,  80, 104,
-            20, 177,  89, 101, 123,
-            81, 198, 222,  45, 139,
-            243
-        ]);
-
-        const decipher = crypto.createDecipheriv('aes-256-cbc', keyBytes1, ivBytes1);
-        const input = fs.createReadStream(pbfDataEncrypt);
-        const output = fs.createWriteStream(pbfDataDecryptByNode);
-        input.pipe(decipher).pipe(output);
-        //let decrypted = Buffer.concat([decipher.update(encryptedBuffer), decipher.final()]);
-    });
-
-    test('parse pbf file from encrypt', () => {
-
-    });
-    test('parse pbf file from encrypt base64', () => {
-
-    });
-    test('test hex to byte array', () => {
-        //var encryptedBytes = aesCbc.encrypt(textBytes);
-    });
-});
 
 function createVectorData(options?) {
     const collisionBoxArray = new CollisionBoxArray();
