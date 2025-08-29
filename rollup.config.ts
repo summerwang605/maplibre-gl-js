@@ -7,7 +7,10 @@ import bannerMapAbc from './build/banner-mapabc';
 import bannerTopsmap from './build/banner-topsmap';
 import bannerAmap from './build/banner-amap';
 import {type RollupOptions} from 'rollup';
-import packageJson from './package.json' assert {type: 'json'};
+import json from '@rollup/plugin-json';
+import typescript from '@rollup/plugin-typescript';
+
+import packageJson from './package.json' with {type: 'json'};
 //import {importAssertions} from 'acorn-import-assertions';
 const version = packageJson.version;
 
@@ -69,6 +72,8 @@ const pluginsForRollup2 = [
     // Ingest the sourcemaps produced in the first step of the build.
     // This is the only reason we use Rollup for this second pass
     sourcemaps(),
+    json(),        // 👈 让 Rollup 识别 JSON 模块
+    typescript(),   // 如果用 TS
     // When running in development watch mode, tell rollup explicitly to watch
     // for changes to the staging chunks built by the previous step. Otherwise
     // only they get built, but not the merged dev build js

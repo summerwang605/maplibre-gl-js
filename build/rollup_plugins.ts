@@ -21,7 +21,7 @@ export const nodeResolve = resolve({
 });
 
 export const plugins = (production: boolean): Plugin[] => [
-    json(),
+    json(),        // 👈 让 Rollup 识别 JSON 模块
     // https://github.com/zaach/jison/issues/351
     replace({
         preventAssignment: true,

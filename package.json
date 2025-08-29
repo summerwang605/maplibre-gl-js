@@ -35,10 +35,10 @@
     "gl-matrix": "^3.4.4",
     "kdbush": "^4.0.2",
     "murmurhash-js": "^1.0.0",
-    "pify": "^6.1.0",
-    "process-nextick-args": "^2.0.1",
     "pbf": "^4.0.1",
+    "pify": "^6.1.0",
     "potpack": "^2.1.0",
+    "process-nextick-args": "^2.0.1",
     "quickselect": "^3.0.0",
     "supercluster": "^8.0.1",
     "tinyqueue": "^3.0.0"
