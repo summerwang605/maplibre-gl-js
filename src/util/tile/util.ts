@@ -26,31 +26,33 @@ export function decryptVectorTileBuffer(encryptedBuffer: ArrayBuffer): ArrayBuff
     return encryptedBuffer;
 }
 
-
-// 将 ArrayBuffer 转换为 CryptoKey 对象
-async function importKey(rawKey: ArrayBuffer, algorithm: string): Promise<CryptoKey> {
+// 封装 importKey，支持 ArrayBuffer 和 Uint8Array
+async function importKey(rawKey: BufferSource, algorithm: string): Promise<CryptoKey> {
     return crypto.subtle.importKey(
-        'raw',
-        rawKey,
-        algorithm,
+        "raw",
+        rawKey,                // 👈 允许 ArrayBuffer 或 TypedArray
+        { name: algorithm },   // 👈 WebCrypto 要求传对象
         false,
-        ['decrypt']
+        ["decrypt"]
     );
 }
+
 /**
  * 使用web支持的解密方法
  * @param encryptedBuffer
  */
 export async function decryptArrayBufferByWeb(encryptedBuffer: ArrayBuffer): Promise<ArrayBuffer> {
-    const keyBytes1: Uint8Array = new Uint8Array([
+      // 密钥 (Uint8Array)
+    const keyBytes1 = new Uint8Array([
         252, 159, 116, 47, 97, 45, 39,
         184, 247, 166, 135, 108, 131, 186,
         49, 193, 218, 17, 74, 153, 146,
         150, 127, 16, 150, 32, 121, 240,
         225, 227, 126, 158
     ]);
+    // IV (初始化向量)
     // 将 Buffer 转换为 Uint8Array
-    const ivBytes1: Uint8Array = new Uint8Array([
+    const ivBytes1 = new Uint8Array([
         140, 75, 77, 80, 104,
         20, 177, 89, 101, 123,
         81, 198, 222, 45, 139,
@@ -62,7 +64,12 @@ export async function decryptArrayBufferByWeb(encryptedBuffer: ArrayBuffer): Pro
         iv: ivBytes1
     };
     const cryptoKey = await importKey(keyBytes1, algorithm.name);
-    const decryptedData = await crypto.subtle.decrypt(algorithm, cryptoKey, encryptedBuffer);
+    // 解密
+    const decryptedData = await crypto.subtle.decrypt(
+        algorithm,
+        cryptoKey,
+        encryptedBuffer   // 👈 ArrayBuffer
+    );
     return decryptedData;
 }
 
