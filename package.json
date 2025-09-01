@@ -175,7 +175,6 @@
     "gl-stats": "node --no-warnings --loader ts-node/esm test/bench/gl-stats.ts",
     "typecheck": "tsc --noEmit && tsc --project tsconfig.dist.json",
     "prepare": "npm run codegen",
-
     "generate-typings-mapabc": "dts-bundle-generator --export-referenced-types=false --umd-module-name=mapabcgl -o ./dist/mapabc-gl.d.ts ./src/index.ts",
     "generate-docs-mapabc": "typedoc && node --no-warnings --loader ts-node/esm build/generate-docs-mapabc.ts",
     "watch-css-mapabc": "postcss --watch -o dist/mapabc-gl.css src/css/mapabc-gl.css",
@@ -185,16 +184,13 @@
     "build-css-mapabc": "postcss -o dist/mapabc-gl.css src/css/mapabc-gl.css",
     "build-dev-mapabc": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,EXPORTNAMESPACE:mapabc",
     "build-dist-mapabc": "npm run build-css && npm run generate-typings-mapabc && npm run generate-shaders && npm run build-dev-mapabc && npm run build-csp-dev-mapabc && npm run build-prod-mapabc && npm run build-csp-mapabc",
-
-    "generate-typings-topsmap": "dts-bundle-generator --export-referenced-types=false --umd-module-name=topsmapgl -o ./dist/topsmap-gl.d.ts ./src/index.ts",
+    "generate-typings-topsmap": "dts-bundle-generator --export-referenced-types=false --umd-module-name=amapgl -o ./dist/amap-gl.d.ts ./src/index.ts",
     "watch-css-topsmap": "postcss --watch -o dist/topsmap-gl.css src/css/topsmap-gl.css",
     "watch-dev-topsmap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,topsmap:true,EXPORTNAMESPACE:topsmap --watch",
     "start-topsmap": "run-p watch-css-topsmap watch-dev-topsmap start-server",
     "build-prod-topsmap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:production,MINIFY:true,topsmap:true,EXPORTNAMESPACE:topsmap",
     "build-css-topsmap": "postcss -o dist/topsmap-gl.css src/css/topsmap-gl.css",
     "build-dev-topsmap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,EXPORTNAMESPACE:topsmap",
-
-    "generate-typings-topsmap": "dts-bundle-generator --export-referenced-types=false --umd-module-name=amapgl -o ./dist/amap-gl.d.ts ./src/index.ts",
     "watch-css-amap": "postcss --watch -o dist/amap-gl.css src/css/amap-gl.css",
     "watch-dev-amap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,amap:true,EXPORTNAMESPACE:amap --watch",
     "start-amap": "run-p watch-css-amap watch-dev-amap start-server",
@@ -202,7 +198,6 @@
     "build-css-amap": "postcss -o dist/amap-gl.css src/css/amap-gl.css",
     "start-debug-amap": "run-p watch-css-amap watch-dev-amap start-server",
     "build-dev-amap": "rollup --configPlugin @rollup/plugin-typescript -c --environment BUILD:dev,EXPORTNAMESPACE:amap",
-      
     "tsnode": "node --experimental-loader=ts-node/esm --no-warnings"
   },
   "files": [
