@@ -2,7 +2,7 @@ import type Point from '@mapbox/point-geometry';
 
 import {DOM} from '../../util/dom';
 import type {Map} from '../map';
-import type {IControl} from './control';
+import type {ControlPosition, IControl} from './control';
 
 import {extend, bindAll, getAngleDelta} from '../../util/util';
 import {
@@ -59,7 +59,7 @@ export class NavControl implements IControl {
         const this_ = this;
         this.options = extend({}, defaultOptions, options);
         this._container = DOM.create('div', 'mapabcgl-ctrl mapabcgl-ctrl-group maplibregl-ctrl maplibregl-ctrl-group');
-        this._nav_container = DOM.create('div', 'maplibregl-scalebox maplibregl-scalebox zdeps-1 usel', this._container);
+        this._nav_container = DOM.create('div', 'mapabcgl-scalebox maplibregl-scalebox zdeps-1 usel', this._container);
         this._container.addEventListener('contextmenu', (e) => e.preventDefault());
         this._nav_container.addEventListener('contextmenu', (e) => e.preventDefault());
         if (this.options.showZoom) {
@@ -170,8 +170,9 @@ export class NavControl implements IControl {
      * 重新計算羅盤指針方向
      */
     _rotateCompassArrow() {
-        const amapRotate = `rotateX(${this._map.transform.pitch * (180 / Math.PI)}deg) rotateZ(${this._map.transform.bearing * (180 / Math.PI)}deg)`;
-        this._amapCompass.style.transform = amapRotate;
+        this._amapCompass.style.transform = `rotateZ(${-this._map.transform.roll}deg) rotateX(${this._map.transform.pitch}deg) rotateZ(${-this._map.transform.bearing}deg)`;
+        //const amapRotate = `rotateX(${this._map.transform.pitch * (180 / Math.PI)}deg) rotateZ(${this._map.transform.bearing * (180 / Math.PI)}deg)`;
+        //this._amapCompass.style.transform = amapRotate;
     }
 
     onAdd(map: Map) {
@@ -209,10 +210,10 @@ export class NavControl implements IControl {
         DOM.remove(this._container);
         delete this._map;
     }
-/*
-    getDefaultPosition() {
-        return this.options.position;
-    } */
+
+    getDefaultPosition(): ControlPosition {
+        return 'bottom-right';
+    }
 
     /**
      * 計算控件所在位置
