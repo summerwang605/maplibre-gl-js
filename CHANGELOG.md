@@ -1,10 +1,22 @@
 ## main
 
 ### ✨ Features and improvements
-- _...Add new stuff here..._
+
+- Enable documentation admonitions in Material for MkDocs. ([#6455](https://github.com/maplibre/maplibre-gl-js/issues/6455))
 
 ### 🐞 Bug fixes
+- Fix raster flickering when using terrain 3D and optimize terrain logic.
+- Fix issue where parent tiles are retained when deeper descendant tiles already cover the missing ideal tile. ([#6442](https://github.com/maplibre/maplibre-gl-js/pull/6442))
+- Fix an issue when GeolocateControl fires outofmaxbounds event with trackUserLocation disabled ([#6464](https://github.com/maplibre/maplibre-gl-js/pull/6464))
+
+## 5.7.3
+
+### ✨ Features and improvements
+
+### 🐞 Bug fixes
+
 - Fix case where retain loaded children does not retain uppermost loaded children ([#6399](https://github.com/maplibre/maplibre-gl-js/pull/6399))
+- Fix an issue with spread operator that caused issues in Angular and esbuild ([#6438](https://github.com/maplibre/maplibre-gl-js/pull/6438))
 
 ## 5.7.2
 
