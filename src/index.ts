@@ -54,6 +54,7 @@ import type {DistributiveKeys, DistributiveOmit, GeoJSONFeature, MapGeoJSONFeatu
 import type {Handler, HandlerResult} from './ui/handler_manager';
 import type {Complete, RequireAtLeastOne, Subscription} from './util/util';
 import type {CalculateTileZoomFunction, CoveringTilesOptions} from './geo/projection/covering_tiles';
+import type {TransformConstrainFunction} from './geo/transform_interface';
 import type {StyleImage, StyleImageData, StyleImageInterface, StyleImageMetadata, TextFit} from './style/style_image';
 import type {StyleLayer} from './style/style_layer';
 import type {Tile} from './source/tile';
@@ -72,6 +73,7 @@ import type {GlyphPosition, GlyphPositions} from './render/glyph_atlas';
 import type {ImageAtlas} from './render/image_atlas';
 import type {StyleGlyph} from './style/style_glyph';
 import type {FeatureIndex} from './data/feature_index';
+import type {DashEntry} from './render/line_atlas';
 const version = packageJSON.version;
 let accessToken = config.ACCESS_TOKEN;
 
@@ -270,6 +272,7 @@ export {
     type Handler,
     type RequireAtLeastOne,
     type CameraUpdateTransformFunction,
+    type TransformConstrainFunction,
     type CustomRenderMethod,
     type CalculateTileZoomFunction,
     type MapSourceDataType,
@@ -380,6 +383,7 @@ export {
     type ErrorEvent,
     type GeoJSONFeature,
     type CoveringTilesOptions,
+    type DashEntry,
     setRTLTextPlugin,
     getRTLTextPluginStatus,
     prewarm,

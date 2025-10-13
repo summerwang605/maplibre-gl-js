@@ -1,5 +1,6 @@
 import {Event, ErrorEvent, Evented} from '../util/evented';
 import {type StyleLayer} from './style_layer';
+import {isRasterStyleLayer} from './style_layer/raster_style_layer';
 import {createStyleLayer} from './create_style_layer';
 import {loadSprite} from './load_sprite';
 import {ImageManager} from '../render/image_manager';
@@ -59,6 +60,8 @@ import type {CanvasSourceSpecification} from '../source/canvas_source';
 import type {CustomLayerInterface} from './style_layer/custom_style_layer';
 import type {Validator} from './validate_style';
 import {
+    type GetDashesParameters,
+    type GetDashesResponse,
     MessageType,
     type GetGlyphsParameters,
     type GetGlyphsResponse,
@@ -246,6 +249,9 @@ export class Style extends Evented {
         });
         this.dispatcher.registerMessageHandler(MessageType.getImages, (mapId, params) => {
             return this.getImages(mapId, params);
+        });
+        this.dispatcher.registerMessageHandler(MessageType.getDashes, (mapId, params) => {
+            return this.getDashes(mapId, params);
         });
         this.imageManager = new ImageManager();
         this.imageManager.setEventedParent(this);
@@ -475,6 +481,11 @@ export class Style extends Evented {
             const styledLayer = createStyleLayer(layer, this._globalState);
             styledLayer.setEventedParent(this, {layer: {id: layer.id}});
             this._layers[layer.id] = styledLayer;
+
+            if (isRasterStyleLayer(styledLayer) && this.sourceCaches[styledLayer.source]) {
+                const rasterFadeDuration = layer.paint?.['raster-fade-duration'] ?? styledLayer.paint.get('raster-fade-duration');
+                this.sourceCaches[styledLayer.source].setRasterFadeDuration(rasterFadeDuration);
+            }
         }
     }
 
@@ -1316,6 +1327,10 @@ export class Style extends Evented {
             this._updateLayer(layer);
         }
 
+        if (isRasterStyleLayer(layer) && name === 'raster-fade-duration') {
+            this.sourceCaches[layer.source].setRasterFadeDuration(value);
+        }
+
         this._changed = true;
         this._updatedPaintProps[layer.id] = true;
         // reset serialization field, to be populated only when needed
@@ -1686,7 +1701,7 @@ export class Style extends Evented {
     }
 
     _setProjectionInternal(name: ProjectionSpecification['type']) {
-        const projectionObjects = createProjectionFromName(name);
+        const projectionObjects = createProjectionFromName(name, this.map.transformConstrain);
         this.projection = projectionObjects.projection;
         this.map.migrateProjection(projectionObjects.transform, projectionObjects.cameraHelper);
         for (const key in this.sourceCaches) {
@@ -1883,6 +1898,14 @@ export class Style extends Evented {
         this.stylesheet.glyphs = glyphsUrl;
         this.glyphManager.entries = {};
         this.glyphManager.setURL(glyphsUrl);
+    }
+
+    async getDashes(mapId: string | number, params: GetDashesParameters): Promise<GetDashesResponse> {
+        const result: GetDashesResponse = {};
+        for (const [key, dash] of Object.entries(params.dashes)) {
+            result[key] = this.lineAtlas.getDash(dash.dasharray, dash.round);
+        }
+        return result;
     }
 
     /**
