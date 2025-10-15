@@ -20,6 +20,7 @@ import {MercatorCoordinate} from './geo/mercator_coordinate';
 import {Evented, type ErrorEvent, Event, type Listener} from './util/evented';
 import {type AddProtocolAction, config} from './util/config';
 import {rtlMainThreadPluginFactory} from './source/rtl_text_plugin_main_thread';
+import {setNow, restoreNow, isTimeFrozen} from './util/time_control';
 import {WorkerPool} from './util/worker_pool';
 import {prewarm, clearPrewarmedResources} from './util/global_worker_pool';
 import {AJAXError, type ExpiryData, type GetResourceResponse, type RequestParameters} from './util/ajax';
@@ -400,6 +401,9 @@ export {
     addSourceType,
     importScriptInWorkers,
     createTileMesh,
+    setNow,
+    restoreNow,
+    isTimeFrozen,
     setBaseApiUrl,
     getBaseApiUrl,
     setAccessToken,
