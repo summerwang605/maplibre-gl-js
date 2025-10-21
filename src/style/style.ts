@@ -13,6 +13,7 @@ import {coerceSpriteToArray} from '../util/style';
 import {getJSON, getReferrer} from '../util/ajax';
 import {ResourceType} from '../util/request_manager';
 import {browser} from '../util/browser';
+import {now} from '../util/time_control';
 import {Dispatcher} from '../util/dispatcher';
 import {validateStyle, emitValidationErrors as _emitValidationErrors} from './validate_style';
 import {type Source} from '../source/source';
@@ -1636,7 +1637,7 @@ export class Style extends Evented {
         if (!_update) return;
 
         const parameters = {
-            now: browser.now(),
+            now: now(),
             transition: extend({
                 duration: 300,
                 delay: 0
@@ -1688,7 +1689,7 @@ export class Style extends Evented {
         if (!update) return;
 
         const parameters = {
-            now: browser.now(),
+            now: now(),
             transition: extend({
                 duration: 300,
                 delay: 0
@@ -1805,7 +1806,7 @@ export class Style extends Evented {
         // tiles will fully display symbols in their first frame
         forceFullPlacement = forceFullPlacement || this._layerOrderChanged || fadeDuration === 0;
 
-        if (forceFullPlacement || !this.pauseablePlacement || (this.pauseablePlacement.isDone() && !this.placement.stillRecent(browser.now(), transform.zoom))) {
+        if (forceFullPlacement || !this.pauseablePlacement || (this.pauseablePlacement.isDone() && !this.placement.stillRecent(now(), transform.zoom))) {
             this.pauseablePlacement = new PauseablePlacement(transform, this.map.terrain, this._order, forceFullPlacement, showCollisionBoxes, fadeDuration, crossSourceCollisions, this.placement);
             this._layerOrderChanged = false;
         }
@@ -1820,7 +1821,7 @@ export class Style extends Evented {
             this.pauseablePlacement.continuePlacement(this._order, this._layers, layerTiles);
 
             if (this.pauseablePlacement.isDone()) {
-                this.placement = this.pauseablePlacement.commit(browser.now());
+                this.placement = this.pauseablePlacement.commit(now());
                 placementCommitted = true;
             }
 
@@ -1841,7 +1842,7 @@ export class Style extends Evented {
         }
 
         // needsRender is false when we have just finished a placement that didn't change the visibility of any symbols
-        const needsRerender = !this.pauseablePlacement.isDone() || this.placement.hasTransitions(browser.now());
+        const needsRerender = !this.pauseablePlacement.isDone() || this.placement.hasTransitions(now());
         return needsRerender;
     }
 
